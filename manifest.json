@@ -1,0 +1,25 @@
+{
+  "name": "P2P Share — Ultra P2P Messenger & File Share",
+  "short_name": "P2P Share",
+  "description": "Zero-Cloud LAN & Internet Direct P2P Messenger and High-Speed File Streaming Hub",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%234f46e5'/><path d='M108 28L44 108h44l-12 56 68-84H100l8-52z' fill='%23ffffff'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%234f46e5'/><path d='M288 72L116 288h118l-32 152 182-224H266l22-144z' fill='%23ffffff'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
