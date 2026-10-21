@@ -9,7 +9,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="P2P Share">
     <meta name="mobile-web-app-capable" content="yes">
-    <link id="pwaManifestLink" rel="manifest" href="">
+    <link id="pwaManifestLink" rel="manifest" href="./manifest.json">
     <title>P2P Share — Ultra P2P Messenger & Direct File Share</title>
 
     <script>
@@ -1801,7 +1801,69 @@
         async function initPwaEngine() {
             syncPwaInstallButtonsVisibility();
 
-            // Detect via getInstalledRelatedApps API if supported on Android/Desktop Chrome
+            // 1. Verify manifest.json is reachable; if missing, fall back to inline Data-URI manifest
+            try {
+                const manifestLink = document.getElementById('pwaManifestLink');
+                if (manifestLink) {
+                    const res = await fetch('./manifest.json', { method: 'HEAD', cache: 'no-cache' });
+                    if (!res.ok) throw new Error('manifest.json not found');
+                }
+            } catch (err) {
+                const manifestLink = document.getElementById('pwaManifestLink');
+                if (manifestLink) {
+                    const basePath = window.location.origin + window.location.pathname;
+                    const fallbackManifest = {
+                        name: 'P2P Share — Ultra P2P Messenger & File Share',
+                        short_name: 'P2P Share',
+                        description: 'Zero-Cloud LAN & Internet Direct P2P Messenger and High-Speed File Streaming Hub',
+                        start_url: basePath,
+                        scope: basePath,
+                        display: 'standalone',
+                        orientation: 'portrait-primary',
+                        background_color: '#0f172a',
+                        theme_color: '#4f46e5',
+                        icons: [
+                            {
+                                src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%234f46e5'/><path d='M108 28L44 108h44l-12 56 68-84H100l8-52z' fill='%23ffffff'/></svg>",
+                                sizes: '192x192',
+                                type: 'image/svg+xml',
+                                purpose: 'any maskable'
+                            },
+                            {
+                                src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%234f46e5'/><path d='M288 72L116 288h118l-32 152 182-224H266l22-144z' fill='%23ffffff'/></svg>",
+                                sizes: '512x512',
+                                type: 'image/svg+xml',
+                                purpose: 'any maskable'
+                            }
+                        ]
+                    };
+                    manifestLink.setAttribute(
+                        'href',
+                        'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(fallbackManifest))
+                    );
+                }
+            }
+
+            // 2. Register GitHub Pages Service Worker (./sw.js) with relative scope
+            if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+                try {
+                    const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+                    reg.addEventListener('updatefound', () => {
+                        const newWorker = reg.installing;
+                        if (newWorker) {
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    showToast('P2P Share updated for offline use!', 'info');
+                                }
+                            });
+                        }
+                    });
+                } catch (swErr) {
+                    console.warn('Service Worker registration skipped:', swErr);
+                }
+            }
+
+            // 3. Detect via getInstalledRelatedApps API if supported on Android/Desktop Chrome
             if ('getInstalledRelatedApps' in navigator) {
                 try {
                     const relatedApps = await navigator.getInstalledRelatedApps();
@@ -1812,6 +1874,7 @@
                 } catch (e) {}
             }
 
+            // 4. Listen for display-mode changes (when launched into standalone window)
             if (window.matchMedia) {
                 const mq = window.matchMedia('(display-mode: standalone)');
                 if (mq && typeof mq.addEventListener === 'function') {
@@ -1824,6 +1887,7 @@
                 }
             }
 
+            // 5. Capture Chrome/Edge/Android native install prompt
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPwaPrompt = e;
@@ -1833,6 +1897,7 @@
                 }
             });
 
+            // 6. Auto-hide all install buttons immediately after installation completes
             window.addEventListener('appinstalled', () => {
                 deferredPwaPrompt = null;
                 localStorage.setItem('ata_pwa_installed_v1', '1');
