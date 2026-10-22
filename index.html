@@ -6,9 +6,11 @@
     <meta id="themeColorMeta" name="theme-color" content="#ffffff">
     <meta name="color-scheme" content="light dark">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="P2P Share">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <link id="appleTouchIconLink" rel="apple-touch-icon" href="">
     <link id="pwaManifestLink" rel="manifest" href="./manifest.json">
     <title>P2P Share — Ultra P2P Messenger & Direct File Share</title>
 
@@ -27,6 +29,48 @@
                     document.documentElement.classList.add('is-pwa-installed');
                 }
 
+                var makeIconPng = function(size) {
+                    var c = document.createElement('canvas');
+                    c.width = size;
+                    c.height = size;
+                    var ctx = c.getContext('2d');
+                    var grad = ctx.createLinearGradient(0, 0, size, size);
+                    grad.addColorStop(0, '#4f46e5');
+                    grad.addColorStop(0.5, '#6366f1');
+                    grad.addColorStop(1, '#ec4899');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    var r = size * 0.22;
+                    ctx.moveTo(r, 0);
+                    ctx.lineTo(size - r, 0);
+                    ctx.quadraticCurveTo(size, 0, size, r);
+                    ctx.lineTo(size, size - r);
+                    ctx.quadraticCurveTo(size, size, size - r, size);
+                    ctx.lineTo(r, size);
+                    ctx.quadraticCurveTo(0, size, 0, size - r);
+                    ctx.lineTo(0, r);
+                    ctx.quadraticCurveTo(0, 0, r, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    var s = size / 192;
+                    ctx.moveTo(108 * s, 28 * s);
+                    ctx.lineTo(44 * s, 108 * s);
+                    ctx.lineTo(88 * s, 108 * s);
+                    ctx.lineTo(76 * s, 164 * s);
+                    ctx.lineTo(144 * s, 80 * s);
+                    ctx.lineTo(100 * s, 80 * s);
+                    ctx.closePath();
+                    ctx.fill();
+                    return c.toDataURL('image/png');
+                };
+
+                var icon192 = makeIconPng(192);
+                var icon512 = makeIconPng(512);
+                var appleLink = document.getElementById('appleTouchIconLink');
+                if (appleLink) appleLink.setAttribute('href', icon192);
+
                 var basePath = window.location.origin + window.location.pathname;
                 var manifestObj = {
                     name: 'P2P Share — Ultra P2P Messenger & File Share',
@@ -39,28 +83,19 @@
                     background_color: '#0f172a',
                     theme_color: '#4f46e5',
                     icons: [
-                        {
-                            src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%234f46e5'/><path d='M108 28L44 108h44l-12 56 68-84H100l8-52z' fill='%23ffffff'/></svg>",
-                            sizes: '192x192',
-                            type: 'image/svg+xml',
-                            purpose: 'any maskable'
-                        },
-                        {
-                            src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%234f46e5'/><path d='M288 72L116 288h118l-32 152 182-224H266l22-144z' fill='%23ffffff'/></svg>",
-                            sizes: '512x512',
-                            type: 'image/svg+xml',
-                            purpose: 'any maskable'
-                        }
+                        { src: icon192, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+                        { src: icon512, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
                     ]
                 };
                 var manifestLink = document.getElementById('pwaManifestLink');
                 if (manifestLink) {
-                    manifestLink.setAttribute('href', 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifestObj)));
+                    var blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+                    manifestLink.setAttribute('href', URL.createObjectURL(blob));
                 }
             } catch (e) {}
         })();
     </script>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     <script src="https://js.pusher.com/8.4.0/pusher.min.js"></script>
@@ -68,6 +103,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <script src="https://unpkg.com/mqtt@5.3.4/dist/mqtt.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -99,12 +135,10 @@
             scroll-behavior: smooth;
         }
 
-        /* Hide all PWA install buttons automatically once the app is installed */
         html.is-pwa-installed .pwa-install-btn {
             display: none !important;
         }
 
-        /* Custom Premium Scrollbars */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb {
@@ -115,7 +149,6 @@
             background: linear-gradient(180deg, #6366f1, #ec4899);
         }
 
-        /* Scrollable Desktop Sidebar Rail so bottom icons never get cut off */
         .desktop-rail-scroll {
             overflow-y: auto;
             overflow-x: hidden;
@@ -126,7 +159,6 @@
             width: 3px;
         }
 
-        /* Semi-Light Blue & Pink Animated Gradient Borders */
         .gradient-border-card {
             position: relative;
             background-clip: padding-box;
@@ -148,7 +180,6 @@
             box-shadow: 0 14px 34px -8px rgba(99, 102, 241, 0.18), 0 4px 16px -4px rgba(236, 72, 153, 0.12);
         }
 
-        /* 120fps Hardware-Accelerated Keyframe Animations */
         @keyframes springPop {
             0% { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.94); }
             65% { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.015); }
@@ -172,12 +203,12 @@
         }
         @keyframes callRingWave {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1.06); box-shadow: 0 0 0 22px rgba(16, 185, 129, 0); }
+            70% { transform: scale(1.06); box-shadow: 0 0 0 26px rgba(16, 185, 129, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
         @keyframes voiceEqBar {
             0%, 100% { height: 6px; }
-            50% { height: 22px; }
+            50% { height: 24px; }
         }
         @keyframes shimmerBg {
             0% { background-position: 0% 50%; }
@@ -214,7 +245,6 @@
             0%, 100% { border-color: rgba(99, 102, 241, 0.85); box-shadow: 0 0 30px rgba(99, 102, 241, 0.35), inset 0 0 25px rgba(236, 72, 153, 0.2); }
             50% { border-color: rgba(236, 72, 153, 0.9); box-shadow: 0 0 45px rgba(236, 72, 153, 0.45), inset 0 0 35px rgba(16, 185, 129, 0.25); }
         }
-        /* Visual Guide SVG Animations */
         @keyframes dashFlow {
             to { stroke-dashoffset: -40; }
         }
@@ -257,7 +287,6 @@
             animation: shimmerBg 6s ease infinite;
         }
 
-        /* Animated Shimmer Laser Progress Bar for Active Transfers in Chat & Files */
         .progress-laser-active {
             background-image:
                 linear-gradient(
@@ -276,12 +305,10 @@
             box-shadow: 0 0 12px rgba(236, 72, 153, 0.55);
         }
 
-        /* Live Streaming Card Glow */
         .transfer-streaming-glow {
             animation: auraGlowBreath 2.2s ease-in-out infinite;
         }
 
-        /* Buttons allow overflow: visible so blinking dots & badges are NEVER hidden under circles */
         .ultra-btn, button {
             position: relative;
             overflow: visible;
@@ -292,7 +319,6 @@
             transform: scale(0.92);
         }
 
-        /* Top-Layer Blinking Status & Notification Dots (Guaranteed Above Circles) */
         .status-dot-overlay {
             z-index: 35 !important;
             pointer-events: none;
@@ -315,7 +341,6 @@
             box-shadow: 0 12px 26px -6px rgba(99, 102, 241, 0.18), 0 4px 12px -4px rgba(236, 72, 153, 0.12);
         }
 
-        /* Contained Ripple Host so button badges are never clipped */
         .ripple-clip-host {
             position: absolute;
             inset: 0;
@@ -336,7 +361,6 @@
             animation: rippleExpand 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        /* Smooth Slide-Out Header Action Drawer */
         .header-slide-tray {
             display: flex;
             align-items: center;
@@ -353,7 +377,7 @@
             white-space: nowrap;
         }
         .header-slide-tray.is-open {
-            max-width: 340px;
+            max-width: 380px;
             opacity: 1;
             pointer-events: auto;
             transform: translateX(0);
@@ -361,7 +385,6 @@
             overflow: visible;
         }
 
-        /* Mobile Active Bottom Nav Indicator Pill */
         .mob-nav-active-pill::before {
             content: '';
             position: absolute;
@@ -377,15 +400,13 @@
 
         .drop-active { border-color: #6366f1 !important; background-color: rgba(99, 102, 241, 0.1) !important; transform: scale(1.018); }
 
-        /* Deterministic Modal Display Classes — Hidden by default to prevent reload flash */
         .app-modal-backdrop { display: none; }
         .app-modal-backdrop.is-open { display: flex !important; }
         html.is-registered #onboardingModal { display: none !important; }
 
         .pb-safe { padding-bottom: max(0.5rem, env(safe-area-inset-bottom)); }
-        .pt-safe { padding-top: max(0.25rem, env(safe-area-inset-top)); }
+        .pt-safe { padding-top: max(0.35rem, env(safe-area-inset-top)); }
 
-        /* Scanner Laser Line Animation */
         @keyframes scannerLaser {
             0%, 100% { top: 8%; opacity: 0.85; }
             50% { top: 88%; opacity: 1; }
@@ -413,7 +434,6 @@
             min-height: 100%;
         }
 
-        /* Media Thumbnail Hover Zoom */
         .media-thumb-card {
             overflow: hidden;
             position: relative;
@@ -423,27 +443,64 @@
             transform: scale(1.02);
         }
 
+        .whatsapp-call-bg {
+            background: radial-gradient(circle at 50% 25%, #134e4a 0%, #0f172a 55%, #020617 100%);
+        }
+
+        .mirror-video {
+            transform: scaleX(-1);
+        }
+
+        .inbuilt-audio-range {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.35);
+            outline: none;
+        }
+        .inbuilt-audio-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+        }
+
         @media (max-width: 767px) {
+            body {
+                background-color: #0f172a;
+            }
             #chatConversationPane.mobile-chat-open {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
                 right: 0 !important;
-                bottom: 68px !important;
-                z-index: 150 !important;
-                height: calc(100dvh - 68px) !important;
+                bottom: 0 !important;
+                z-index: 160 !important;
+                height: 100dvh !important;
+                border-radius: 0 !important;
+            }
+            #mobileBottomNav {
+                height: calc(62px + env(safe-area-inset-bottom, 0px));
+                border-top-left-radius: 1.25rem;
+                border-top-right-radius: 1.25rem;
+            }
+            .peer-card-item {
+                border-radius: 1.15rem;
             }
         }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col md:flex-row select-none transition-colors duration-200">
 
-    <!-- Hidden Audio Element for WebRTC Remote Voice Stream -->
     <audio id="remoteVoiceAudio" autoplay playsinline class="hidden"></audio>
 
     <div id="toastContainer" class="fixed top-3 right-3 left-3 md:left-auto md:w-96 z-[250] flex flex-col gap-2.5 pointer-events-none"></div>
 
-    <!-- Minimized Active Voice / Video Call Floating Pill -->
     <div id="minimizedCallPill" onclick="maximizeCallModal()" class="hidden fixed top-3 left-1/2 -translate-x-1/2 z-[245] px-4 py-2 rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 text-white shadow-2xl border border-white/25 flex items-center gap-3 cursor-pointer animate-pop">
         <span class="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
         <i id="minCallTypeIcon" class="fas fa-phone text-xs"></i>
@@ -452,6 +509,73 @@
         <button type="button" onclick="event.stopPropagation(); endActiveCall(true)" class="w-6 h-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center text-[10px] shadow">
             <i class="fas fa-phone-slash"></i>
         </button>
+    </div>
+
+    <div id="minimizedVideoCallCard" onclick="maximizeCallModal()" class="hidden fixed top-14 right-3 sm:right-6 z-[246] w-44 h-60 sm:w-52 sm:h-68 rounded-3xl bg-slate-950 text-white shadow-[0_20px_50px_rgba(0,0,0,0.75)] border-2 border-emerald-400/70 overflow-hidden cursor-pointer animate-pop select-none">
+        <video id="minRemoteCallVideo" autoplay playsinline muted class="w-full h-full object-cover bg-slate-900"></video>
+        <img id="minRemoteVideoFallbackImg" class="hidden w-full h-full object-cover bg-slate-900" alt="Remote Video">
+        <div class="absolute top-2 right-2 w-16 h-24 sm:w-20 sm:h-28 rounded-2xl overflow-hidden border-2 border-white/80 shadow-xl bg-slate-900 z-20">
+            <video id="minLocalCallVideo" autoplay muted playsinline class="w-full h-full object-cover mirror-video"></video>
+        </div>
+        <div class="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/65 backdrop-blur-md flex items-center gap-1.5 z-20 border border-white/15">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span id="minVideoCallTimer" class="text-[10px] font-mono font-extrabold">00:00</span>
+        </div>
+        <div class="absolute inset-x-0 bottom-0 p-2.5 bg-gradient-to-t from-black/90 via-black/55 to-transparent flex items-center justify-between gap-1.5 z-20">
+            <div class="min-w-0">
+                <p id="minVideoCallPeerName" class="text-[11px] font-extrabold text-white truncate">Peer</p>
+                <p class="text-[9px] text-emerald-300 font-bold">Tap to expand</p>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+                <button type="button" onclick="event.stopPropagation(); toggleCallMute()" class="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-[10px]">
+                    <i id="minVideoMuteIcon" class="fas fa-microphone"></i>
+                </button>
+                <button type="button" onclick="event.stopPropagation(); endActiveCall(true)" class="w-7 h-7 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-[10px] shadow">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="iosInstallModal" onclick="if(event.target===this) closeAppModal('iosInstallModal')" class="app-modal-backdrop fixed inset-0 bg-slate-900/75 dark:bg-slate-950/85 backdrop-blur-md z-[265] items-center justify-center p-4">
+        <div class="gradient-border-card bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 animate-pop shadow-2xl relative">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-animated-gradient text-white flex items-center justify-center text-lg shadow">
+                        <i class="fab fa-apple"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">Install on iPhone / iPad</h3>
+                        <p class="text-[10px] text-slate-500">Add P2P Share to your iOS Home Screen</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAppModal('iosInstallModal')" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center">
+                    <i class="fas fa-times text-xs"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300 mb-5">
+                <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 flex items-center gap-3 border border-slate-200/60 dark:border-slate-700">
+                    <span class="w-7 h-7 rounded-xl bg-brand-600 text-white font-black flex items-center justify-center shrink-0">1</span>
+                    <p>Tap the Safari <strong>Share</strong> button <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded bg-brand-500/15 text-brand-600 dark:text-brand-400 font-bold"><i class="fas fa-arrow-up-from-bracket"></i></span> at the bottom of your screen.</p>
+                </div>
+                <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 flex items-center gap-3 border border-slate-200/60 dark:border-slate-700">
+                    <span class="w-7 h-7 rounded-xl bg-pink-600 text-white font-black flex items-center justify-center shrink-0">2</span>
+                    <p>Scroll down the share sheet and tap <strong>"Add to Home Screen"</strong> <i class="far fa-square-plus text-pink-500 ml-1"></i>.</p>
+                </div>
+                <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 flex items-center gap-3 border border-slate-200/60 dark:border-slate-700">
+                    <span class="w-7 h-7 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center shrink-0">3</span>
+                    <p>Tap <strong>"Add"</strong> in the top-right corner to launch P2P Share as a full-screen iOS app with notifications.</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="markIosPwaInstalled()" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow">
+                    <i class="fas fa-check mr-1"></i>I Installed It
+                </button>
+                <button type="button" onclick="closeAppModal('iosInstallModal')" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-extrabold">
+                    Close
+                </button>
+            </div>
+        </div>
     </div>
 
     <div id="customAlertModal" onclick="if(event.target===this) closeCustomAlert(false)" class="app-modal-backdrop fixed inset-0 bg-slate-900/70 dark:bg-slate-950/85 backdrop-blur-md z-[260] items-center justify-center p-4">
@@ -531,14 +655,13 @@
                         <i class="fas fa-rocket"></i> Launch P2P Share
                     </button>
                     <button type="button" onclick="triggerPwaInstall()" class="pwa-install-btn w-full py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-brand-50 text-brand-600 dark:text-brand-400 font-extrabold rounded-2xl text-xs flex items-center justify-center gap-2">
-                        <i class="fas fa-download"></i> Install App on Device (PWA)
+                        <i class="fas fa-download"></i> Install App on Device (Android / iOS / PC)
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scrollable Desktop Left Navigation Rail (Never clips bottom icons on any screen height) -->
     <aside class="hidden md:flex w-20 h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl text-slate-500 dark:text-slate-400 flex-col items-center py-3 justify-between gap-4 z-30 shrink-0 border-r border-slate-200/80 dark:border-slate-800 shadow-xs desktop-rail-scroll">
         <div class="flex flex-col items-center gap-2.5 w-full shrink-0">
             <button type="button" onclick="triggerNavAnim(this); switchModule('about')" class="w-11 h-11 rounded-2xl bg-animated-gradient p-0.5 shadow-lg shadow-brand-500/25 cursor-pointer transition-transform hover:scale-105 shrink-0" title="P2P Share — About & Guide">
@@ -633,6 +756,9 @@
                                 <button type="button" onclick="triggerNavAnim(this); triggerPwaInstall()" class="pwa-install-btn w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-600 hover:text-white flex items-center justify-center text-xs shrink-0 transition-all" title="Install App (PWA)">
                                     <i class="fas fa-download"></i>
                                 </button>
+                                <button type="button" onclick="triggerNavAnim(this); enableOSNotificationsAndBackground()" class="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center justify-center text-xs shrink-0 transition-all" title="Enable Background Call & Message Alerts">
+                                    <i class="fas fa-satellite-dish"></i>
+                                </button>
                                 <button type="button" onclick="triggerNavAnim(this); switchModule('blocked')" class="relative w-8 h-8 rounded-xl bg-rose-500/15 text-rose-500 hover:bg-rose-600 hover:text-white flex items-center justify-center text-xs shrink-0 transition-all" title="Blocked Users">
                                     <i class="fas fa-user-slash"></i>
                                     <span id="mobBlockedDot" class="hidden badge-dot-blink absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-600 rounded-full border border-white dark:border-slate-900"></span>
@@ -661,7 +787,7 @@
 
                     <div class="relative mb-2.5">
                         <i class="fas fa-search absolute left-3.5 top-2.5 text-slate-400 text-xs"></i>
-                        <input type="text" id="contactSearchInput" oninput="renderContacts()" placeholder="Search peers, labels or 5-digit PIN..." class="w-full pl-9 pr-8 py-2 bg-slate-100/90 dark:bg-slate-800/90 border border-transparent focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 rounded-xl text-xs focus:outline-none transition-all">
+                        <input type="text" id="contactSearchInput" oninput="renderContacts()" placeholder="Search peers, last seen, or 5-digit PIN..." class="w-full pl-9 pr-8 py-2 bg-slate-100/90 dark:bg-slate-800/90 border border-transparent focus:border-brand-500 focus:bg-white dark:focus:bg-slate-900 rounded-xl text-xs focus:outline-none transition-all">
                     </div>
 
                     <div class="flex gap-1.5 text-[11px] font-bold bg-slate-100/90 dark:bg-slate-800/90 p-1 rounded-xl">
@@ -674,10 +800,9 @@
                     </div>
                 </div>
 
-                <div id="contactsListContainer" class="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20 md:pb-4"></div>
+                <div id="contactsListContainer" class="flex-1 overflow-y-auto p-3 space-y-2.5 pb-24 md:pb-4"></div>
             </div>
-
-            <div id="chatConversationPane" class="hidden md:flex flex-1 flex-col bg-slate-50 dark:bg-slate-950 h-full w-full absolute md:relative inset-0 z-20">
+			<div id="chatConversationPane" class="hidden md:flex flex-1 flex-col bg-slate-50 dark:bg-slate-950 h-full w-full absolute md:relative inset-0 z-20">
 
                 <div id="noActiveChatOverlay" class="hidden md:flex absolute inset-0 bg-slate-50/95 dark:bg-slate-950/95 z-20 flex-col items-center justify-center p-8 text-center">
                     <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-500/15 to-pink-500/15 text-brand-600 dark:text-brand-400 flex items-center justify-center text-3xl mb-4 animate-float pulse-ring border border-brand-500/20">
@@ -737,13 +862,11 @@
                     </div>
 
                     <div class="flex items-center gap-1.5 shrink-0 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
-                        <!-- Direct Voice Call Button -->
                         <button type="button" onclick="triggerNavAnim(this); startMediaCallWithActivePeer('voice')" class="w-8 h-8 sm:w-auto sm:px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-xs shrink-0" title="Start Voice Call">
                             <i class="fas fa-phone text-[11px]"></i>
                             <span class="hidden sm:inline">Call</span>
                         </button>
 
-                        <!-- Direct Video Call Button -->
                         <button type="button" onclick="triggerNavAnim(this); startMediaCallWithActivePeer('video')" class="w-8 h-8 sm:w-auto sm:px-2.5 rounded-xl bg-gradient-to-r from-brand-600 to-pink-600 hover:from-brand-700 hover:to-pink-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow-xs shrink-0" title="Start HD Video Call">
                             <i class="fas fa-video text-[11px]"></i>
                             <span class="hidden sm:inline">Video</span>
@@ -763,7 +886,10 @@
                                 <i class="fas fa-thumbtack text-xs"></i>
                             </button>
                             <button type="button" onclick="triggerNavAnim(this); clearActiveConversation()" class="w-8 h-8 rounded-xl bg-white dark:bg-slate-700 hover:bg-rose-500 hover:text-white text-slate-600 dark:text-slate-200 flex items-center justify-center transition-colors shrink-0" title="Clear Chat History">
-                                <i class="fas fa-trash-can text-xs"></i>
+                                <i class="fas fa-broom text-xs"></i>
+                            </button>
+                            <button type="button" onclick="triggerNavAnim(this); deletePeerUser(activeContactId)" class="w-8 h-8 rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition-colors shrink-0" title="Delete User Profile from List">
+                                <i class="fas fa-user-xmark text-xs"></i>
                             </button>
                         </div>
 
@@ -798,7 +924,7 @@
                     </button>
                 </div>
 
-                <div class="p-2.5 md:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 relative">
+                <div class="p-2.5 md:p-4 pb-safe bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 relative">
                     <div id="composerLockOverlay" class="hidden absolute inset-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs z-20 flex items-center justify-center px-4">
                         <div id="composerLockContent" class="flex flex-wrap items-center justify-center gap-3 text-xs font-bold text-slate-600 dark:text-slate-300"></div>
                     </div>
@@ -827,7 +953,8 @@
                 </div>
             </div>
         </section>
-		<section id="moduleFiles" class="flex-1 hidden flex-col h-full w-full bg-slate-50 dark:bg-slate-950 overflow-y-auto animate-module-enter">
+
+        <section id="moduleFiles" class="flex-1 hidden flex-col h-full w-full bg-slate-50 dark:bg-slate-950 overflow-y-auto animate-module-enter">
             <header class="h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between shrink-0 sticky top-0 z-20 pt-safe">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
@@ -975,7 +1102,6 @@
             </div>
         </section>
 
-        <!-- FULL ORIGINAL ABOUT & VISUAL GUIDE SECTION (100% RESTORED WITHOUT REMOVING ANYTHING) -->
         <section id="moduleAbout" class="flex-1 hidden flex-col h-full w-full bg-slate-50 dark:bg-slate-950 overflow-y-auto animate-module-enter">
             <header class="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 sticky top-0 z-20 pt-safe">
                 <div class="flex items-center gap-3">
@@ -1631,7 +1757,6 @@
         </div>
     </div>
 
-    <!-- Modal 3: Device Profile, Blocked Users Shortcut, PWA Install & Complete Reset -->
     <div id="profileModal" onclick="if(event.target===this) closeAppModal('profileModal')" class="app-modal-backdrop fixed inset-0 bg-slate-900/65 dark:bg-slate-950/80 backdrop-blur-sm z-[180] items-center justify-center p-4">
         <div class="gradient-border-card bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 animate-pop relative shadow-2xl">
             <div class="flex justify-between items-center mb-4">
@@ -1675,55 +1800,52 @@
                     </button>
                 </div>
                 <button type="button" onclick="resetAllDeviceData()" class="w-full py-2.5 bg-rose-500/10 hover:bg-rose-600 hover:text-white text-rose-600 font-extrabold text-xs rounded-xl transition-colors">
-                    <i class="fas fa-trash-can mr-1.5"></i> Reset & Logout Device
+                    <i class="fas fa-trash-can mr-1.5"></i> Delete My Profile & Reset Device
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal 4: Unified Voice & HD Video Call Overlay (WebRTC P2P + Internet Relay) -->
-    <div id="voiceVideoCallModal" class="app-modal-backdrop fixed inset-0 bg-slate-950/92 backdrop-blur-xl z-[240] items-center justify-center p-3 sm:p-5">
-        <div class="gradient-border-card bg-slate-900 text-white rounded-3xl max-w-2xl w-full p-5 sm:p-7 text-center animate-pop shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[430px] max-h-[92dvh]">
-            <div class="absolute -top-16 -left-16 w-44 h-44 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
-            <div class="absolute -bottom-16 -right-16 w-44 h-44 bg-brand-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div id="voiceVideoCallModal" class="app-modal-backdrop fixed inset-0 w-screen h-dvh bg-slate-950 z-[240] items-stretch justify-center p-0 overflow-hidden">
+        <div class="whatsapp-call-bg text-white w-full h-full flex flex-col justify-between relative overflow-hidden">
 
-            <!-- Top Call Header -->
-            <div class="flex items-center justify-between relative z-20">
-                <span id="callModeBadge" class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold">
-                    <i class="fas fa-shield-halved mr-1"></i>Direct P2P + Internet Call
-                </span>
-                <div class="flex items-center gap-2">
-                    <span id="voiceCallTimerText" class="hidden px-3 py-1 rounded-full bg-white/10 text-xs font-mono font-black text-white">00:00</span>
-                    <button type="button" onclick="minimizeCallModal()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs" title="Minimize Call">
-                        <i class="fas fa-compress"></i>
-                    </button>
+            <div class="flex items-center justify-between px-4 sm:px-8 pt-safe py-4 bg-gradient-to-b from-black/75 via-black/35 to-transparent relative z-30">
+                <button type="button" onclick="minimizeCallModal()" class="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white flex items-center justify-center text-sm shadow-lg" title="Minimize Call">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="flex flex-col items-center">
+                    <span id="callModeBadge" class="px-3 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-extrabold tracking-wide flex items-center gap-1.5">
+                        <i class="fas fa-lock text-[9px]"></i>End-to-End Encrypted
+                    </span>
+                    <span id="voiceCallTimerText" class="hidden mt-1 px-3 py-0.5 rounded-full bg-black/40 text-xs font-mono font-black text-emerald-300">00:00</span>
                 </div>
+                <button type="button" onclick="switchCallCameraFacing()" id="topBarFlipBtn" class="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 backdrop-blur-md text-white flex items-center justify-center text-sm shadow-lg" title="Flip Camera">
+                    <i class="fas fa-camera-rotate"></i>
+                </button>
             </div>
 
-            <!-- Video Call Stage (Shown when Video Call is active) -->
-            <div id="videoCallStage" class="hidden relative w-full h-72 sm:h-96 bg-black rounded-2xl overflow-hidden my-3 border border-white/15 shadow-inner z-10">
+            <div id="videoCallStage" class="hidden absolute inset-0 w-full h-full bg-black z-10">
                 <video id="remoteCallVideo" autoplay playsinline class="w-full h-full object-cover"></video>
                 <img id="remoteVideoFallbackCanvas" class="hidden w-full h-full object-cover" alt="Remote Video Stream">
-                <div class="absolute bottom-3 right-3 w-28 h-36 sm:w-36 sm:h-44 rounded-2xl overflow-hidden border-2 border-white/70 shadow-2xl bg-slate-950 z-20">
-                    <video id="localCallVideo" autoplay muted playsinline class="w-full h-full object-cover mirror"></video>
+                <div class="absolute top-20 right-4 sm:top-24 sm:right-6 w-28 h-40 sm:w-40 sm:h-56 rounded-2xl overflow-hidden border-2 border-white/80 shadow-[0_15px_35px_rgba(0,0,0,0.75)] bg-slate-900 z-20 transition-all">
+                    <video id="localCallVideo" autoplay muted playsinline class="w-full h-full object-cover mirror-video"></video>
                 </div>
-                <div class="absolute bottom-3 left-3 px-3 py-1 rounded-xl bg-black/55 backdrop-blur-md text-left z-20">
-                    <p id="videoStagePeerName" class="text-xs font-extrabold text-white">Peer</p>
-                    <p id="videoStageStatus" class="text-[10px] text-emerald-300 font-bold">Live Video</p>
+                <div class="absolute top-20 left-4 sm:top-24 sm:left-6 px-3.5 py-1.5 rounded-2xl bg-black/55 backdrop-blur-md text-left z-20 border border-white/10">
+                    <p id="videoStagePeerName" class="text-xs sm:text-sm font-extrabold text-white">Peer</p>
+                    <p id="videoStageStatus" class="text-[10px] text-emerald-300 font-bold">HD Live Video</p>
                 </div>
             </div>
 
-            <!-- Voice Call Avatar Stage (Shown during Voice Call or Ringing) -->
-            <div id="voiceAvatarStage" class="my-auto py-4 relative z-10">
-                <div class="relative w-24 h-24 mx-auto mb-4">
-                    <img id="voiceCallAvatar" src="" class="w-24 h-24 rounded-3xl object-cover border-2 border-emerald-400 shadow-2xl call-ring-avatar">
-                    <span class="w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 absolute -bottom-1 -right-1"></span>
-                </div>
-                <h3 id="voiceCallPeerName" class="text-lg font-black tracking-tight">Peer Name</h3>
-                <p id="voiceCallStatusText" class="text-xs text-emerald-300 font-bold mt-1">Calling...</p>
+            <div id="voiceAvatarStage" class="my-auto py-6 px-4 flex flex-col items-center justify-center relative z-20">
+                <h3 id="voiceCallPeerName" class="text-2xl sm:text-3xl font-black tracking-tight text-white">Peer Name</h3>
+                <p id="voiceCallStatusText" class="text-xs sm:text-sm text-emerald-300 font-bold mt-1.5 mb-8">Calling...</p>
 
-                <!-- Live Animated Voice Equalizer -->
-                <div id="voiceCallWaveform" class="hidden flex items-center justify-center gap-1.5 h-8 mt-4">
+                <div class="relative w-32 h-32 sm:w-40 sm:h-40 mx-auto mb-6">
+                    <img id="voiceCallAvatar" src="" class="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover border-4 border-emerald-400/80 shadow-2xl call-ring-avatar">
+                    <span class="w-5 h-5 rounded-full bg-emerald-500 border-2 border-slate-900 absolute bottom-1 right-2"></span>
+                </div>
+
+                <div id="voiceCallWaveform" class="hidden flex items-center justify-center gap-1.5 h-9 mt-2">
                     <span class="w-1.5 bg-emerald-400 rounded-full eq-bar-1"></span>
                     <span class="w-1.5 bg-teal-400 rounded-full eq-bar-2"></span>
                     <span class="w-1.5 bg-brand-400 rounded-full eq-bar-3"></span>
@@ -1732,64 +1854,62 @@
                 </div>
             </div>
 
-            <!-- Incoming Call Answer / Decline Controls -->
-            <div id="incomingCallControls" class="hidden grid grid-cols-2 gap-3 mt-4 relative z-20">
-                <button type="button" onclick="declineIncomingCall()" class="py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30">
-                    <i class="fas fa-phone-slash"></i> Decline
-                </button>
-                <button type="button" onclick="acceptIncomingCall()" class="py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 animate-bounce">
-                    <i id="incomingAcceptIcon" class="fas fa-phone"></i> <span id="incomingAcceptText">Answer</span>
-                </button>
+            <div class="w-full max-w-xl mx-auto px-4 pb-safe pt-4 mb-2 sm:mb-4 relative z-30">
+                <div class="bg-slate-900/85 backdrop-blur-2xl border border-white/15 rounded-3xl p-4 sm:p-5 shadow-2xl">
+                    <div id="incomingCallControls" class="hidden grid grid-cols-2 gap-4">
+                        <button type="button" onclick="declineIncomingCall()" class="py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-rose-600/40">
+                            <i class="fas fa-phone-slash"></i> Decline
+                        </button>
+                        <button type="button" onclick="acceptIncomingCall()" class="py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/40 animate-bounce">
+                            <i id="incomingAcceptIcon" class="fas fa-phone"></i> <span id="incomingAcceptText">Answer</span>
+                        </button>
+                    </div>
+
+                    <div id="activeCallControls" class="flex items-center justify-around sm:justify-center sm:gap-6">
+                        <button type="button" id="callSpeakerBtn" onclick="toggleCallSpeaker()" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center text-base sm:text-lg transition-colors shadow-lg" title="Toggle Speaker Boost">
+                            <i id="callSpeakerIcon" class="fas fa-volume-high"></i>
+                        </button>
+                        <button type="button" id="callCameraBtn" onclick="toggleCallCamera()" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-base sm:text-lg transition-colors" title="Camera On / Off">
+                            <i id="callCameraIcon" class="fas fa-video"></i>
+                        </button>
+                        <button type="button" id="callMuteBtn" onclick="toggleCallMute()" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-base sm:text-lg transition-colors" title="Mute / Unmute Mic">
+                            <i id="callMuteIcon" class="fas fa-microphone"></i>
+                        </button>
+                        <button type="button" id="callFlipBtn" onclick="switchCallCameraFacing()" class="hidden w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-base sm:text-lg transition-colors" title="Switch Front / Back Camera">
+                            <i class="fas fa-camera-rotate"></i>
+                        </button>
+                        <button type="button" onclick="endActiveCall(true)" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-lg sm:text-xl shadow-xl shadow-rose-600/50" title="End Call">
+                            <i class="fas fa-phone-slash"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <!-- Active / Outgoing Call Controls -->
-            <div id="activeCallControls" class="flex items-center justify-center gap-3 sm:gap-4 mt-4 relative z-20">
-                <button type="button" id="callMuteBtn" onclick="toggleCallMute()" class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm sm:text-base transition-colors" title="Mute / Unmute Mic">
-                    <i id="callMuteIcon" class="fas fa-microphone"></i>
-                </button>
-                <button type="button" id="callCameraBtn" onclick="toggleCallCamera()" class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm sm:text-base transition-colors" title="Camera On / Off">
-                    <i id="callCameraIcon" class="fas fa-video"></i>
-                </button>
-                <button type="button" id="callFlipBtn" onclick="switchCallCameraFacing()" class="hidden w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm sm:text-base transition-colors" title="Switch Front / Back Camera">
-                    <i class="fas fa-camera-rotate"></i>
-                </button>
-                <button type="button" onclick="endActiveCall(true)" class="w-13 h-13 sm:w-14 sm:h-14 px-5 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center text-base sm:text-lg shadow-xl shadow-rose-600/40" title="End Call">
-                    <i class="fas fa-phone-slash"></i>
-                </button>
-                <button type="button" id="callSpeakerBtn" onclick="toggleCallSpeaker()" class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-sm sm:text-base transition-colors shadow" title="Toggle Speaker Boost">
-                    <i id="callSpeakerIcon" class="fas fa-volume-high"></i>
-                </button>
-            </div>
         </div>
     </div>
 
-    <!-- Modal 5: Fullscreen Image & Video Lightbox Preview -->
-    <div id="mediaPreviewModal" onclick="if(event.target===this) closeMediaPreviewModal()" class="app-modal-backdrop fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[255] items-center justify-center p-4">
-        <div class="relative max-w-4xl w-full max-h-[90dvh] flex flex-col items-center justify-center animate-pop">
-            <div class="w-full flex items-center justify-between mb-3 px-2 text-white">
-                <h4 id="mediaPreviewTitle" class="text-xs md:text-sm font-extrabold truncate max-w-md">Preview</h4>
-                <div class="flex items-center gap-2">
+    <div id="mediaPreviewModal" onclick="if(event.target===this) closeMediaPreviewModal()" class="app-modal-backdrop fixed inset-0 bg-slate-950/92 backdrop-blur-xl z-[255] items-center justify-center p-3 sm:p-5">
+        <div class="relative max-w-4xl w-full max-h-[92dvh] flex flex-col items-center justify-center animate-pop">
+            <div class="w-full flex items-center justify-between mb-3 px-3 py-2.5 rounded-2xl bg-slate-900/90 border border-white/10 text-white shadow-lg">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div id="mediaPreviewTypeBadge" class="w-8 h-8 rounded-xl bg-brand-600 text-white flex items-center justify-center text-xs shrink-0">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <h4 id="mediaPreviewTitle" class="text-xs md:text-sm font-extrabold truncate max-w-[200px] sm:max-w-md">Preview</h4>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
                     <a id="mediaPreviewDownloadBtn" href="#" download class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow">
-                        <i class="fas fa-download"></i> Save
+                        <i class="fas fa-download"></i> Save File
                     </a>
-                    <button type="button" onclick="closeMediaPreviewModal()" class="w-9 h-9 rounded-full bg-white/15 hover:bg-rose-600 text-white flex items-center justify-center">
+                    <button type="button" onclick="closeMediaPreviewModal()" class="w-8 h-8 rounded-full bg-white/15 hover:bg-rose-600 text-white flex items-center justify-center text-xs">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>
-            <div id="mediaPreviewBody" class="w-full flex items-center justify-center overflow-hidden rounded-2xl bg-black/50 border border-white/10 p-2 max-h-[80dvh]"></div>
+            <div id="mediaPreviewBody" class="w-full flex items-center justify-center overflow-auto rounded-3xl bg-slate-900/90 border border-white/15 p-3 sm:p-5 max-h-[80dvh] shadow-2xl"></div>
         </div>
     </div>
-	<!-- ================================================================= -->
-    <!-- 7. COMPLETE GLITCH-FREE JAVASCRIPT ENGINE & HYBRID P2P ARCHITECT  -->
-    <!-- ================================================================= -->
-    <script>
-        // =====================================================================
-        // A. BACKEND GOOGLE DRIVE CONFIG (AUTO 2ND-ATTEMPT FAILOVER & AUTO-DELETE)
-        // =====================================================================
-        // Paste your deployed Google Apps Script Web App URL below once.
-        // It runs 100% invisibly in the backend for all users whenever P2P fails
-        // on the 1st attempt, and automatically trashes/deletes the file on expiry!
+	<script>
         const GOOGLE_DRIVE_CONFIG = {
             scriptUrl: 'https://script.google.com/macros/s/AKfycbz9ZAimxO9WWjNwDqT0Ub9cBlghOkOdzVdAHDQ_fd_ze9-3j2K9ppNvUQ1-A-xcndE/exec',
             folderName: 'P2P_Share_Auto_Expiry_Vault',
@@ -1805,8 +1925,8 @@
         const DB_NAME    = 'AtaDirectLanVault_v5';
         const DB_VERSION = 1;
         let dbPromise    = null;
+        let extractedZipBlobUrls = [];
 
-        // Ultra-Premium Spring Bounce Animation on Click
         function triggerNavAnim(el) {
             if (!el) return;
             el.classList.remove('nav-clicked');
@@ -1815,7 +1935,6 @@
             setTimeout(() => el.classList.remove('nav-clicked'), 380);
         }
 
-        // Smooth Slide-Out Header Tray Controller
         function toggleHeaderSlideTray(trayId, iconId) {
             const tray = document.getElementById(trayId);
             const icon = document.getElementById(iconId);
@@ -1850,7 +1969,6 @@
             slideDot.classList.toggle('hidden', !(trayClosed && (hasNotif || hasBlock)));
         }
 
-        // Contained Ripple Effect
         document.addEventListener('pointerdown', (e) => {
             const btn = e.target.closest('button, .peer-card-item');
             if (!btn) return;
@@ -1918,6 +2036,16 @@
             });
         }
 
+        async function idbDelete(storeName, key) {
+            const db = await getDb();
+            return new Promise((resolve) => {
+                const tx = db.transaction(storeName, 'readwrite');
+                tx.objectStore(storeName).delete(key);
+                tx.oncomplete = () => resolve(true);
+                tx.onerror = () => resolve(false);
+            });
+        }
+
         async function idbClearAll() {
             const db = await getDb();
             const stores = ['identity', 'peers', 'messages', 'files'];
@@ -1931,9 +2059,6 @@
             }
         }
 
-        // =====================================================================
-        // B. BACKEND GOOGLE DRIVE UPLOAD, AUTO-DELETE & THUMBNAIL ENGINE
-        // =====================================================================
         function isGoogleDriveConfigured() {
             return Boolean(
                 GOOGLE_DRIVE_CONFIG.scriptUrl &&
@@ -1942,9 +2067,7 @@
             );
         }
 
-        // Invisibly uploads file to Google Drive on 2nd attempt after P2P failure
         async function uploadFileViaBackendDrive(file, transferId, onProgress) {
-            // 1. Primary: Google Drive Backend Bridge (text/plain bypasses CORS preflight on Google Apps Script)
             if (isGoogleDriveConfigured()) {
                 try {
                     if (onProgress) onProgress(18);
@@ -1973,12 +2096,9 @@
                             deleteToken: resJson.fileId || ''
                         };
                     }
-                } catch (gErr) {
-                    console.warn('Google Drive backend script fallback warning:', gErr);
-                }
+                } catch (gErr) {}
             }
 
-            // 2. Seamless Zero-Config Backup Relay (Ensures 2nd-attempt always succeeds even before scriptUrl is pasted)
             if (GOOGLE_DRIVE_CONFIG.enableSeamlessFallbackIfUnset) {
                 const fd = new FormData();
                 fd.append('file', file);
@@ -2019,7 +2139,6 @@
             });
         }
 
-        // Automatically deletes the file from Google Drive when the expiry timer finishes or message is deleted
         async function deleteCloudFileFromStorage(trOrMsg) {
             if (!trOrMsg || trOrMsg.cloudDeleted) return;
             trOrMsg.cloudDeleted = true;
@@ -2046,7 +2165,6 @@
             }
         }
 
-        // Returns FontAwesome icon & color badge for ALL file types
         function getFileTypeMeta(fileName = '', mimeType = '') {
             const ext = (fileName.split('.').pop() || '').toLowerCase();
             const mime = (mimeType || '').toLowerCase();
@@ -2063,7 +2181,7 @@
             if (ext === 'pdf' || mime === 'application/pdf') {
                 return { category: 'pdf', icon: 'fa-file-pdf', color: 'text-rose-400', bg: 'bg-rose-500/15', label: 'PDF' };
             }
-            if (['zip','rar','7z','tar','gz','bz2'].includes(ext)) {
+            if (['zip','rar','7z','tar','gz','bz2'].includes(ext) || mime.includes('zip')) {
                 return { category: 'archive', icon: 'fa-file-zipper', color: 'text-amber-500', bg: 'bg-amber-500/15', label: 'ZIP' };
             }
             if (['doc','docx','rtf','odt'].includes(ext)) {
@@ -2087,7 +2205,6 @@
             return { category: 'file', icon: 'fa-file-shield', color: 'text-emerald-400', bg: 'bg-emerald-500/15', label: (ext ? ext.toUpperCase().slice(0, 5) : 'FILE') };
         }
 
-        // Generates a compact JPEG Base64 preview thumbnail for Images AND Videos
         async function generateMediaThumbnailDataUrl(file) {
             if (!file) return null;
             const meta = getFileTypeMeta(file.name || '', file.type || '');
@@ -2164,24 +2281,253 @@
             return null;
         }
 
-        function openMediaPreviewModal(url, fileName, category) {
-            if (!url) return showToast('Media preview unavailable or expired', 'error');
+        function formatAudioSeconds(sec) {
+            if (!sec || !isFinite(sec) || sec < 0) return '00:00';
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function toggleInbuiltAudioPlay(uid) {
+            const audio = document.getElementById('inbuilt_aud_' + uid);
+            const icon = document.getElementById('inbuilt_aud_icon_' + uid);
+            if (!audio) return;
+            document.querySelectorAll('audio[id^="inbuilt_aud_"]').forEach(other => {
+                if (other !== audio && !other.paused) {
+                    other.pause();
+                }
+            });
+            if (audio.paused) {
+                audio.play().catch(() => {});
+                if (icon) icon.className = 'fas fa-pause text-xs';
+            } else {
+                audio.pause();
+                if (icon) icon.className = 'fas fa-play text-xs ml-0.5';
+            }
+        }
+
+        function syncInbuiltAudioProgress(uid) {
+            const audio = document.getElementById('inbuilt_aud_' + uid);
+            const range = document.getElementById('inbuilt_aud_range_' + uid);
+            const timeEl = document.getElementById('inbuilt_aud_time_' + uid);
+            const icon = document.getElementById('inbuilt_aud_icon_' + uid);
+            if (!audio) return;
+            const cur = audio.currentTime || 0;
+            const dur = audio.duration || 0;
+            if (range && dur > 0) {
+                range.value = Math.min(100, (cur / dur) * 100);
+            }
+            if (timeEl) {
+                timeEl.textContent = `${formatAudioSeconds(cur)} / ${formatAudioSeconds(dur)}`;
+            }
+            if (icon) {
+                icon.className = audio.paused ? 'fas fa-play text-xs ml-0.5' : 'fas fa-pause text-xs';
+            }
+        }
+
+        function seekInbuiltAudio(uid, pct) {
+            const audio = document.getElementById('inbuilt_aud_' + uid);
+            if (!audio || !audio.duration) return;
+            audio.currentTime = (Number(pct) / 100) * audio.duration;
+        }
+
+        function cycleInbuiltAudioSpeed(uid, btn) {
+            const audio = document.getElementById('inbuilt_aud_' + uid);
+            if (!audio) return;
+            const speeds = [1, 1.25, 1.5, 2];
+            const next = speeds[(speeds.indexOf(audio.playbackRate) + 1) % speeds.length] || 1;
+            audio.playbackRate = next;
+            if (btn) btn.textContent = `${next}x`;
+        }
+
+        async function openInbuiltFileViewerByTransferId(transferId, fallbackUrl = '', fallbackName = '', fallbackCategory = '') {
+            const tr = transfers.find(t => t.id === transferId);
+            const url = (tr && (tr.blobUrl || tr.cloudUrl)) || fallbackUrl;
+            const fileName = (tr && tr.name) || fallbackName || 'File';
+            const mime = (tr && tr.mimeType) || '';
+            const meta = getFileTypeMeta(fileName, mime);
+            const category = fallbackCategory || meta.category;
+            const blobObj = tr && tr.blob instanceof Blob ? tr.blob : null;
+            await openMediaPreviewModal(url, fileName, category, blobObj);
+        }
+
+        async function openMediaPreviewModal(url, fileName, category, blobObj = null) {
+            if (!url && !blobObj) return showToast('File preview unavailable or expired', 'error');
             const modal = document.getElementById('mediaPreviewModal');
             const body = document.getElementById('mediaPreviewBody');
             const title = document.getElementById('mediaPreviewTitle');
             const dlBtn = document.getElementById('mediaPreviewDownloadBtn');
             if (!modal || !body) return;
 
-            title.textContent = fileName || 'Media Preview';
-            dlBtn.href = url;
+            extractedZipBlobUrls.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} });
+            extractedZipBlobUrls = [];
+
+            const effectiveUrl = url || (blobObj ? URL.createObjectURL(blobObj) : '');
+            title.textContent = fileName || 'Inbuilt Viewer';
+            dlBtn.href = effectiveUrl;
             dlBtn.download = fileName || 'download';
 
-            if (category === 'video') {
-                body.innerHTML = `<video src="${url}" controls autoplay playsinline class="max-h-[75dvh] max-w-full rounded-xl shadow-2xl"></video>`;
+            const meta = getFileTypeMeta(fileName, '');
+            const cat = category || meta.category;
+
+            if (cat === 'video') {
+                body.innerHTML = `
+                    <div class="w-full flex flex-col items-center">
+                        <video src="${effectiveUrl}" controls autoplay playsinline class="max-h-[72dvh] max-w-full rounded-2xl shadow-2xl bg-black"></video>
+                    </div>
+                `;
+            } else if (cat === 'image') {
+                body.innerHTML = `<img src="${effectiveUrl}" alt="${escapeHtml(fileName)}" class="max-h-[72dvh] max-w-full object-contain rounded-2xl shadow-2xl">`;
+            } else if (cat === 'audio') {
+                const uid = 'modal_aud_' + Date.now();
+                body.innerHTML = `
+                    <div class="w-full max-w-md p-6 rounded-3xl bg-slate-800/90 border border-white/10 text-white flex flex-col items-center gap-4 shadow-2xl">
+                        <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-500 to-pink-600 flex items-center justify-center text-3xl shadow-lg animate-float">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="text-center max-w-full">
+                            <h5 class="text-sm font-extrabold truncate">${escapeHtml(fileName)}</h5>
+                            <p class="text-[11px] text-emerald-300 font-bold mt-0.5">P2P Share Inbuilt Hi-Fi Audio Player</p>
+                        </div>
+                        <audio id="inbuilt_aud_${uid}" src="${effectiveUrl}" autoplay ontimeupdate="syncInbuiltAudioProgress('${uid}')" onloadedmetadata="syncInbuiltAudioProgress('${uid}')" onended="syncInbuiltAudioProgress('${uid}')" class="hidden"></audio>
+                        <div class="w-full flex items-center gap-3 bg-slate-900/90 p-3.5 rounded-2xl border border-white/10">
+                            <button type="button" onclick="toggleInbuiltAudioPlay('${uid}')" class="w-11 h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow">
+                                <i id="inbuilt_aud_icon_${uid}" class="fas fa-pause text-xs"></i>
+                            </button>
+                            <div class="flex-1 flex flex-col gap-1.5">
+                                <input id="inbuilt_aud_range_${uid}" type="range" min="0" max="100" value="0" oninput="seekInbuiltAudio('${uid}', this.value)" class="w-full inbuilt-audio-range">
+                                <div class="flex justify-between text-[10px] font-mono text-slate-300">
+                                    <span id="inbuilt_aud_time_${uid}">00:00 / 00:00</span>
+                                    <button type="button" onclick="cycleInbuiltAudioSpeed('${uid}', this)" class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 text-[9px] font-extrabold">1x</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (cat === 'pdf') {
+                body.innerHTML = `
+                    <div class="w-full h-[72dvh] flex flex-col rounded-2xl overflow-hidden bg-slate-800 border border-white/15">
+                        <iframe src="${effectiveUrl}" class="w-full flex-1 border-0 bg-white" title="Inbuilt PDF Viewer"></iframe>
+                    </div>
+                `;
+            } else if (cat === 'archive') {
+                body.innerHTML = `
+                    <div class="w-full max-w-2xl p-6 text-center text-white">
+                        <i class="fas fa-circle-notch fa-spin text-2xl text-amber-400 mb-2"></i>
+                        <p class="text-xs font-extrabold">Opening ZIP Archive inside P2P Share...</p>
+                    </div>
+                `;
+                modal.classList.add('is-open');
+                await renderZipArchiveExplorer(effectiveUrl, fileName, blobObj, body);
+                return;
+            } else if (cat === 'text' || cat === 'code') {
+                body.innerHTML = `<div class="text-xs text-slate-300 p-4">Loading document preview...</div>`;
+                modal.classList.add('is-open');
+                try {
+                    const sourceBlob = blobObj || await (await fetch(effectiveUrl)).blob();
+                    const textContent = (await sourceBlob.text()).slice(0, 100000);
+                    body.innerHTML = `
+                        <pre class="w-full max-h-[70dvh] overflow-auto p-4 rounded-2xl bg-slate-950 text-emerald-300 font-mono text-xs text-left leading-relaxed border border-white/10">${escapeHtml(textContent)}</pre>
+                    `;
+                } catch (e) {
+                    body.innerHTML = `<p class="text-xs text-rose-400 p-6">Could not preview text file. Use Save File above.</p>`;
+                }
+                return;
             } else {
-                body.innerHTML = `<img src="${url}" alt="${escapeHtml(fileName)}" class="max-h-[75dvh] max-w-full object-contain rounded-xl shadow-2xl">`;
+                body.innerHTML = `
+                    <div class="p-8 text-center text-white space-y-3">
+                        <div class="w-16 h-16 rounded-2xl ${meta.bg} ${meta.color} flex items-center justify-center text-2xl mx-auto">
+                            <i class="fas ${meta.icon}"></i>
+                        </div>
+                        <h5 class="text-sm font-extrabold">${escapeHtml(fileName)}</h5>
+                        <p class="text-xs text-slate-400">Tap Save File above to download this file to your device.</p>
+                    </div>
+                `;
             }
             modal.classList.add('is-open');
+        }
+
+        async function renderZipArchiveExplorer(url, fileName, blobObj, containerEl) {
+            if (typeof JSZip === 'undefined') {
+                containerEl.innerHTML = `<p class="text-xs text-rose-400 p-6">ZIP Archive library unavailable. Tap Save File to download.</p>`;
+                return;
+            }
+            try {
+                const targetBlob = blobObj || await (await fetch(url)).blob();
+                const zip = await JSZip.loadAsync(targetBlob);
+                const entries = [];
+                zip.forEach((relPath, zipEntry) => {
+                    entries.push({ relPath, zipEntry });
+                });
+
+                if (entries.length === 0) {
+                    containerEl.innerHTML = `<p class="text-xs text-slate-400 p-6">This ZIP archive is empty.</p>`;
+                    return;
+                }
+
+                let rowsHtml = '';
+                for (let i = 0; i < entries.length; i++) {
+                    const item = entries[i];
+                    const isDir = item.zipEntry.dir;
+                    const sizeUncompressed = (item.zipEntry._data && item.zipEntry._data.uncompressedSize) || 0;
+                    const itemMeta = getFileTypeMeta(item.relPath, '');
+                    rowsHtml += `
+                        <div class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-white/10 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg ${isDir ? 'bg-amber-500/20 text-amber-400' : `${itemMeta.bg}${itemMeta.color}`} flex items-center justify-center text-xs shrink-0">
+                                    <i class="fas ${isDir ? 'fa-folder' : itemMeta.icon}"></i>
+                                </div>
+                                <div class="min-w-0 text-left">
+                                    <p class="text-xs font-bold text-white truncate">${escapeHtml(item.relPath)}</p>
+                                    <p class="text-[10px] text-slate-400 font-mono">${isDir ? 'Folder' : formatBytes(sizeUncompressed)}</p>
+                                </div>
+                            </div>
+                            ${!isDir ? `
+                                <button type="button" onclick="extractSingleZipEntry(${i})" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-extrabold shrink-0 flex items-center gap-1 shadow">
+                                    <i class="fas fa-download"></i> Extract
+                                </button>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                window._activeZipEntries = entries;
+                containerEl.innerHTML = `
+                    <div class="w-full max-w-2xl flex flex-col gap-3 text-white max-h-[70dvh]">
+                        <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-extrabold">
+                            <span><i class="fas fa-file-zipper mr-1.5"></i>${escapeHtml(fileName)}</span>
+                            <span>${entries.length} item(s)</span>
+                        </div>
+                        <div class="overflow-y-auto space-y-2 pr-1 flex-1">
+                            ${rowsHtml}
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                containerEl.innerHTML = `<p class="text-xs text-rose-400 p-6">Unable to read archive structure. Tap Save File above to download directly.</p>`;
+            }
+        }
+
+        async function extractSingleZipEntry(index) {
+            const entries = window._activeZipEntries || [];
+            const item = entries[index];
+            if (!item || !item.zipEntry) return;
+            try {
+                const contentBlob = await item.zipEntry.async('blob');
+                const cleanName = item.relPath.split('/').pop() || 'extracted_file';
+                const extMeta = getFileTypeMeta(cleanName, '');
+                const objUrl = URL.createObjectURL(contentBlob);
+                extractedZipBlobUrls.push(objUrl);
+
+                if (['image', 'video', 'audio', 'pdf', 'text', 'code'].includes(extMeta.category)) {
+                    openMediaPreviewModal(objUrl, cleanName, extMeta.category, contentBlob);
+                } else {
+                    triggerSafeBrowserDownload(objUrl, cleanName);
+                    showToast(`Extracted ${cleanName}`, 'success');
+                }
+            } catch (e) {
+                showToast('Could not extract file from archive', 'error');
+            }
         }
 
         function closeMediaPreviewModal() {
@@ -2191,10 +2537,16 @@
             if (modal) modal.classList.remove('is-open');
         }
 
-        // =====================================================================
-        // B2. PWA SERVICE WORKER & AUTO-HIDDEN INSTALL BUTTON CONTROLLER
-        // =====================================================================
         let deferredPwaPrompt = null;
+        let wakeLockSentinel = null;
+        let bgKeepAliveAudioCtx = null;
+
+        function isIosDevice() {
+            const ua = window.navigator.userAgent || '';
+            const isIPhoneIPad = /iPhone|iPad|iPod/i.test(ua);
+            const isMacTouch = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+            return isIPhoneIPad || isMacTouch;
+        }
 
         function isAppCurrentlyInstalled() {
             const isStandaloneMode =
@@ -2207,6 +2559,13 @@
                 window.navigator.standalone === true ||
                 localStorage.getItem('ata_pwa_installed_v1') === '1';
             return Boolean(isStandaloneMode);
+        }
+
+        function markIosPwaInstalled() {
+            localStorage.setItem('ata_pwa_installed_v1', '1');
+            syncPwaInstallButtonsVisibility();
+            closeAppModal('iosInstallModal');
+            showToast('iPhone PWA status saved!', 'success');
         }
 
         function syncPwaInstallButtonsVisibility() {
@@ -2232,59 +2591,19 @@
         async function initPwaEngine() {
             syncPwaInstallButtonsVisibility();
 
-            try {
-                const manifestLink = document.getElementById('pwaManifestLink');
-                if (manifestLink) {
-                    const res = await fetch('./manifest.json', { method: 'HEAD', cache: 'no-cache' });
-                    if (!res.ok) throw new Error('manifest.json not found');
-                }
-            } catch (err) {
-                const manifestLink = document.getElementById('pwaManifestLink');
-                if (manifestLink) {
-                    const basePath = window.location.origin + window.location.pathname;
-                    const fallbackManifest = {
-                        name: 'P2P Share — Ultra P2P Messenger & File Share',
-                        short_name: 'P2P Share',
-                        description: 'Zero-Cloud LAN & Internet Direct P2P Messenger and High-Speed File Streaming Hub',
-                        start_url: basePath,
-                        scope: basePath,
-                        display: 'standalone',
-                        orientation: 'portrait-primary',
-                        background_color: '#0f172a',
-                        theme_color: '#4f46e5',
-                        icons: [
-                            {
-                                src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%234f46e5'/><path d='M108 28L44 108h44l-12 56 68-84H100l8-52z' fill='%23ffffff'/></svg>",
-                                sizes: '192x192',
-                                type: 'image/svg+xml',
-                                purpose: 'any maskable'
-                            },
-                            {
-                                src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='110' fill='%234f46e5'/><path d='M288 72L116 288h118l-32 152 182-224H266l22-144z' fill='%23ffffff'/></svg>",
-                                sizes: '512x512',
-                                type: 'image/svg+xml',
-                                purpose: 'any maskable'
-                            }
-                        ]
-                    };
-                    manifestLink.setAttribute(
-                        'href',
-                        'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(fallbackManifest))
-                    );
-                }
-            }
-
             if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
                 try {
                     const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-                    reg.addEventListener('updatefound', () => {
-                        const newWorker = reg.installing;
-                        if (newWorker) {
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    showToast('P2P Share updated for offline use!', 'info');
-                                }
-                            });
+                    navigator.serviceWorker.addEventListener('message', (event) => {
+                        const data = event.data || {};
+                        if (data.type === 'FOCUS_CALL_OR_CHAT') {
+                            window.focus();
+                            if (activeCallSession.state !== 'idle') {
+                                maximizeCallModal();
+                            } else if (data.peerId) {
+                                switchModule('chat');
+                                selectContact(data.peerId);
+                            }
                         }
                     });
                 } catch (swErr) {}
@@ -2342,6 +2661,11 @@
                 }
                 return;
             }
+            if (isIosDevice()) {
+                const iosModal = document.getElementById('iosInstallModal');
+                if (iosModal) iosModal.classList.add('is-open');
+                return;
+            }
             await showCustomAlert({
                 title: 'Install P2P Share (PWA)',
                 message: 'On Android/Desktop Chrome or Edge: tap the browser menu (⋮) and choose "Install App" or "Add to Home Screen". On iPhone/iPad Safari: tap Share and select "Add to Home Screen".',
@@ -2349,9 +2673,48 @@
             });
         }
 
-        // =====================================================================
-        // C. CUSTOM BEAUTIFUL ALERT, CONFIRM & WHATSAPP DELETE MODAL ENGINE
-        // =====================================================================
+        async function enableOSNotificationsAndBackground() {
+            if ('Notification' in window) {
+                const perm = await Notification.requestPermission().catch(() => 'denied');
+                if (perm === 'granted') {
+                    showToast('Background Call & Message Notifications Active!', 'success');
+                }
+            }
+            startBackgroundKeepAliveProcess();
+        }
+
+        async function startBackgroundKeepAliveProcess() {
+            if ('wakeLock' in navigator && !wakeLockSentinel) {
+                try {
+                    wakeLockSentinel = await navigator.wakeLock.request('screen');
+                    wakeLockSentinel.addEventListener('release', () => { wakeLockSentinel = null; });
+                } catch (e) {}
+            }
+            if (navigator.locks && navigator.locks.request) {
+                try {
+                    navigator.locks.request('p2p_share_bg_active_lock', { mode: 'shared' }, () => new Promise(() => {}));
+                } catch (e) {}
+            }
+            if (!bgKeepAliveAudioCtx) {
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    bgKeepAliveAudioCtx = new AudioCtx();
+                    const osc = bgKeepAliveAudioCtx.createOscillator();
+                    const gain = bgKeepAliveAudioCtx.createGain();
+                    gain.gain.value = 0.00001;
+                    osc.connect(gain);
+                    gain.connect(bgKeepAliveAudioCtx.destination);
+                    osc.start();
+                } catch (e) {}
+            }
+        }
+
+        document.addEventListener('click', () => {
+            if (myIdentity && !bgKeepAliveAudioCtx) {
+                startBackgroundKeepAliveProcess();
+            }
+        }, { once: true, passive: true });
+
         let customAlertResolver = null;
 
         function configureCustomAlertStyles(type = 'warning') {
@@ -2480,9 +2843,6 @@
             }
         }
 
-        // =====================================================================
-        // D. DEDICATED ABOUT & INTEGRATED HOW-TO-USE TAB CONTROLLERS
-        // =====================================================================
         function openAboutModal() {
             switchModule('about');
             switchAboutSubTab('overview');
@@ -2553,9 +2913,6 @@
             });
         }
 
-        // =====================================================================
-        // E. APPLICATION STATE & VERIFIED HYBRID TRANSFER MEMORY VAULT
-        // =====================================================================
         let myIdentity          = null;
         let peers               = [];
         let messagesByPeer      = {};
@@ -2573,12 +2930,12 @@
         let peerJsInstance      = null;
         let activeWebRtcConns   = {};
         let verifiedRtcPeers    = new Set();
-        let peerRouteModes      = {};          // peerId -> 'LAN' | 'INTERNET'
+        let peerRouteModes      = {};
         let lanBusPeers         = new Set();
         let incomingFileBuffers = {};
-        let outgoingFilesCache  = {};          // transferId -> { file, targetPeerId, inChat, expiryMs }
-        let activeOutgoingAbort = {};          // transferId -> { aborted: boolean, reason: string }
-        let transferAckWaiters  = {};          // key: `${transferId}_${seq}` -> resolver function
+        let outgoingFilesCache  = {};
+        let activeOutgoingAbort = {};
+        let transferAckWaiters  = {};
         let mqttClient          = null;
         let mqttBackupClient    = null;
         let processedPacketIds  = new Set();
@@ -2589,14 +2946,14 @@
         let scannerTorchOn      = false;
         let lastNetworkSignature = '';
 
-        // Unified Voice + HD Video Call Engine State
         let activeCallSession = {
             peerId: null,
             callId: null,
-            callType: 'voice', // 'voice' | 'video'
-            state: 'idle',     // 'idle' | 'calling' | 'ringing' | 'connected'
+            callType: 'voice',
+            state: 'idle',
             mediaConn: null,
             localStream: null,
+            remoteStream: null,
             muted: false,
             cameraEnabled: true,
             facingMode: 'user',
@@ -2613,9 +2970,6 @@
         const EMOJIS = ['😀','😂','🔥','🚀','👍','❤️','🎉','⚡','✅','📁','🙌','😎','🤝','💡','📌','🔒','⭐','🎯','💻','📱','🛠️'];
         const lanBus = new BroadcastChannel('ata_direct_lan_p2p_v5');
 
-        // =====================================================================
-        // F. INITIALIZATION & NETWORK SWITCH MONITOR
-        // =====================================================================
         window.addEventListener('DOMContentLoaded', async () => {
             initPwaEngine();
             initEmojis();
@@ -2623,6 +2977,7 @@
             setupGlobalEscapeListener();
             setupNetworkSwitchGuard();
             startExpiryCountdownTicker();
+            startLastSeenMonitor();
             checkIncomingDirectShareUrl();
             updateSoundIcon();
             enhanceEmbeddedGuide();
@@ -2642,7 +2997,7 @@
             const savedMsgRecords = await idbGetAll('messages');
             const savedFiles = await idbGetAll('files');
 
-            peers = savedPeers.map(p => ({ ...p, online: false }));
+            peers = savedPeers.map(p => ({ ...p, online: false, lastSeen: p.lastSeen || Date.now() }));
             savedMsgRecords.forEach(r => { messagesByPeer[r.peerId] = r.items || []; });
 
             transfers = savedFiles.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).map(f => {
@@ -2678,6 +3033,57 @@
                 document.getElementById('onboardingModal').classList.add('is-open');
             }
         });
+
+        function formatLastSeen(ts, isOnline = false, isDeleted = false) {
+            if (isDeleted) return 'Profile Deleted / Inactive';
+            if (isOnline) return 'Online now';
+            if (!ts || !Number(ts)) return 'Last seen recently';
+            const diffSec = Math.max(0, Math.floor((Date.now() - Number(ts)) / 1000));
+            if (diffSec < 45) return 'Last seen just now';
+            if (diffSec < 3600) return `Last seen ${Math.floor(diffSec / 60)}m ago`;
+            const d = new Date(Number(ts));
+            const now = new Date();
+            const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (d.toDateString() === now.toDateString()) return `Last seen today at ${timeStr}`;
+            return `Last seen ${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} at ${timeStr}`;
+        }
+
+        function startLastSeenMonitor() {
+            setInterval(() => {
+                if (!myIdentity) return;
+                broadcastAllPresence(false);
+                let changed = false;
+                peers.forEach(p => {
+                    if (p.online && p.lastSeen && (Date.now() - p.lastSeen > 50000)) {
+                        p.online = false;
+                        changed = true;
+                    }
+                });
+                renderContacts();
+                if (activeContactId) {
+                    const activePeer = peers.find(x => x.id === activeContactId);
+                    if (activePeer) updateActiveChatHeader(activePeer);
+                }
+            }, 22000);
+
+            window.addEventListener('beforeunload', () => {
+                if (!myIdentity) return;
+                const env = {
+                    packetId: 'leave_' + Date.now(),
+                    envelopeType: 'BROADCAST',
+                    fromId: myIdentity.id,
+                    payload: {
+                        type: 'PEER_OFFLINE_LASTSEEN',
+                        fromId: myIdentity.id,
+                        lastSeen: Date.now()
+                    }
+                };
+                lanBus.postMessage(env);
+                if (mqttClient && mqttClient.connected) {
+                    mqttClient.publish('ata/direct/hub/v5/lobby', JSON.stringify(env));
+                }
+            });
+        }
 
         function getNetworkSignature() {
             const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
@@ -2733,9 +3139,6 @@
             if (b) b.classList.add('hidden');
         }
 
-        // =====================================================================
-        // G. ZERO-BLINK EXPIRATION COUNTDOWN & GOOGLE DRIVE AUTO-DELETE ENGINE
-        // =====================================================================
         function isItemExpired(expiresAt) {
             return Boolean(expiresAt && Number(expiresAt) > 0 && Date.now() >= Number(expiresAt));
         }
@@ -2770,7 +3173,6 @@
                         t.cloudUrl = null;
                         delete outgoingFilesCache[t.id];
 
-                        // Automatically delete from backend Google Drive storage when timer ends
                         deleteCloudFileFromStorage(t);
                         idbPut('files', t);
 
@@ -2812,9 +3214,6 @@
             }, 1000);
         }
 
-        // =====================================================================
-        // H. INVITE DECODING & ONBOARDING
-        // =====================================================================
         function decodeInvitePayload(connectParam) {
             const raw = connectParam.startsWith('ATA-P2P:') ? connectParam.replace('ATA-P2P:', '') : connectParam;
             const decoded = JSON.parse(decodeURIComponent(escape(atob(raw))));
@@ -2904,13 +3303,11 @@
 
             document.getElementById('onboardingModal').classList.remove('is-open');
             requestBrowserNotificationPermission();
+            startBackgroundKeepAliveProcess();
             bootNetworkNode();
             pushNotificationLog('Welcome to P2P Share', `Registered as ${name} (PIN: ${currentPin})`, 'success');
         }
 
-        // =====================================================================
-        // I. QUAD-TRANSPORT NETWORK ENGINE + BINARY WEBRTC + VOICE/VIDEO CALLS
-        // =====================================================================
         function bootNetworkNode() {
             currentPin = myIdentity.pin || String(Math.floor(10000 + Math.random() * 90000));
             const pinEl = document.getElementById('myPinDisplay');
@@ -3053,7 +3450,6 @@
             } catch (e) {}
         }
 
-        // 2. WEBRTC PEERJS ENGINE (RAW BINARY SERIALIZATION FOR ULTRA-FAST LAN + VOICE/VIDEO CALLS)
         function initWebRtcPeer() {
             if (typeof Peer === 'undefined' || !myIdentity) return;
             try {
@@ -3118,7 +3514,6 @@
             } catch (e) {}
         }
 
-        // Uses serialization: 'binary' so raw ArrayBuffer / Uint8Array file chunks stream without Base64 overhead!
         function ensureWebRtcConnection(targetPeerId) {
             if (!peerJsInstance || !targetPeerId || targetPeerId === myIdentity.id) return null;
             const p = peers.find(x => x.id === targetPeerId);
@@ -3235,9 +3630,6 @@
             }
         }
 
-        // =====================================================================
-        // I2. UNIFIED VOICE CALL & HD VIDEO CALL ENGINE (WEBRTC + RELAY FALLBACK)
-        // =====================================================================
         function startCallRingtoneLoop() {
             stopCallRingtoneLoop();
             const playTone = () => {
@@ -3251,7 +3643,7 @@
                     const now = ctx.currentTime;
                     osc.frequency.setValueAtTime(523.25, now);
                     osc.frequency.setValueAtTime(659.25, now + 0.18);
-                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.setValueAtTime(0.14, now);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
                     osc.start(now);
                     osc.stop(now + 0.55);
@@ -3285,7 +3677,6 @@
                 });
             } catch (err) {
                 if (wantVideo) {
-                    // Fallback to audio-only if device has no webcam
                     showToast('Camera unavailable — starting audio-only call', 'info');
                     activeCallSession.callType = 'voice';
                     return await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
@@ -3320,7 +3711,7 @@
             activeCallSession.state = 'calling';
             activeCallSession.muted = false;
 
-            openCallModalUI(peer, callType === 'video' ? 'Calling (HD Video)...' : 'Calling (Voice)...', false);
+            openCallModalUI(peer, callType === 'video' ? 'Calling (WhatsApp HD Video)...' : 'Calling (WhatsApp Voice)...', false);
             startCallRingtoneLoop();
 
             sendPacketToPeer(peer.id, {
@@ -3331,19 +3722,50 @@
             }, true);
         }
 
+        function syncVideoStreamsToElements() {
+            const isVideo = activeCallSession.callType === 'video';
+            const localVid = document.getElementById('localCallVideo');
+            const minLocalVid = document.getElementById('minLocalCallVideo');
+            const remoteVid = document.getElementById('remoteCallVideo');
+            const minRemoteVid = document.getElementById('minRemoteCallVideo');
+
+            if (activeCallSession.localStream && isVideo) {
+                if (localVid && localVid.srcObject !== activeCallSession.localStream) {
+                    localVid.srcObject = activeCallSession.localStream;
+                    localVid.play().catch(() => {});
+                }
+                if (minLocalVid && minLocalVid.srcObject !== activeCallSession.localStream) {
+                    minLocalVid.srcObject = activeCallSession.localStream;
+                    minLocalVid.play().catch(() => {});
+                }
+            }
+            if (activeCallSession.remoteStream && isVideo) {
+                if (remoteVid && remoteVid.srcObject !== activeCallSession.remoteStream) {
+                    remoteVid.srcObject = activeCallSession.remoteStream;
+                    remoteVid.play().catch(() => {});
+                }
+                if (minRemoteVid && minRemoteVid.srcObject !== activeCallSession.remoteStream) {
+                    minRemoteVid.srcObject = activeCallSession.remoteStream;
+                    minRemoteVid.play().catch(() => {});
+                }
+            }
+        }
+
         function openCallModalUI(peer, statusText, isIncomingRinging = false) {
             const isVideo = activeCallSession.callType === 'video';
             document.getElementById('voiceCallAvatar').src = peer.avatar || createDefaultAvatarUrl(peer.name);
             document.getElementById('voiceCallPeerName').textContent = peer.name || 'Peer';
             document.getElementById('videoStagePeerName').textContent = peer.name || 'Peer';
+            document.getElementById('minVideoCallPeerName').textContent = peer.name || 'Peer';
             document.getElementById('voiceCallStatusText').textContent = statusText;
             document.getElementById('voiceCallTimerText').classList.add('hidden');
             document.getElementById('voiceCallWaveform').classList.add('hidden');
             document.getElementById('minimizedCallPill').classList.add('hidden');
+            document.getElementById('minimizedVideoCallCard').classList.add('hidden');
 
             document.getElementById('callModeBadge').innerHTML = isVideo
-                ? `<i class="fas fa-video mr-1"></i>HD P2P Video Call`
-                : `<i class="fas fa-phone mr-1"></i>Direct P2P Voice Call`;
+                ? `<i class="fas fa-lock text-[9px]"></i>End-to-End Encrypted Video`
+                : `<i class="fas fa-lock text-[9px]"></i>End-to-End Encrypted Voice`;
 
             document.getElementById('minCallTypeIcon').className = isVideo ? 'fas fa-video text-xs' : 'fas fa-phone text-xs';
             document.getElementById('incomingAcceptIcon').className = isVideo ? 'fas fa-video' : 'fas fa-phone';
@@ -3352,13 +3774,9 @@
             document.getElementById('videoCallStage').classList.toggle('hidden', !isVideo || isIncomingRinging);
             document.getElementById('voiceAvatarStage').classList.toggle('hidden', isVideo && !isIncomingRinging);
             document.getElementById('callFlipBtn').classList.toggle('hidden', !isVideo);
+            document.getElementById('topBarFlipBtn').classList.toggle('hidden', !isVideo);
 
-            const localVid = document.getElementById('localCallVideo');
-            if (localVid && activeCallSession.localStream && isVideo) {
-                localVid.srcObject = activeCallSession.localStream;
-                localVid.play().catch(() => {});
-            }
-
+            syncVideoStreamsToElements();
             syncCallControlButtonsUI();
 
             document.getElementById('incomingCallControls').classList.toggle('hidden', !isIncomingRinging);
@@ -3390,12 +3808,9 @@
             document.getElementById('videoCallStage').classList.toggle('hidden', !isVideo);
             document.getElementById('voiceAvatarStage').classList.toggle('hidden', isVideo);
             document.getElementById('callFlipBtn').classList.toggle('hidden', !isVideo);
+            document.getElementById('topBarFlipBtn').classList.toggle('hidden', !isVideo);
 
-            const localVid = document.getElementById('localCallVideo');
-            if (localVid && activeCallSession.localStream && isVideo) {
-                localVid.srcObject = activeCallSession.localStream;
-                localVid.play().catch(() => {});
-            }
+            syncVideoStreamsToElements();
 
             sendPacketToPeer(peer.id, {
                 type: 'MEDIA_CALL_ACCEPT',
@@ -3453,6 +3868,7 @@
         function bindMediaCallStreamEvents(mediaConn) {
             if (!mediaConn) return;
             mediaConn.on('stream', (remoteStream) => {
+                activeCallSession.remoteStream = remoteStream;
                 const hasVideoTrack = remoteStream.getVideoTracks && remoteStream.getVideoTracks().length > 0;
                 if (hasVideoTrack || activeCallSession.callType === 'video') {
                     const videoEl = document.getElementById('remoteCallVideo');
@@ -3461,6 +3877,13 @@
                         document.getElementById('remoteVideoFallbackCanvas').classList.add('hidden');
                         videoEl.srcObject = remoteStream;
                         videoEl.play().catch(() => {});
+                    }
+                    const minRemoteVid = document.getElementById('minRemoteCallVideo');
+                    if (minRemoteVid) {
+                        minRemoteVid.classList.remove('hidden');
+                        document.getElementById('minRemoteVideoFallbackImg').classList.add('hidden');
+                        minRemoteVid.srcObject = remoteStream;
+                        minRemoteVid.play().catch(() => {});
                     }
                 }
                 const audioEl = document.getElementById('remoteVoiceAudio');
@@ -3506,7 +3929,6 @@
                 source.connect(processor);
                 processor.connect(ctx.destination);
 
-                // If Video Call is active under symmetric NAT, stream lightweight JPEG video frames
                 if (activeCallSession.callType === 'video') {
                     const localVid = document.getElementById('localCallVideo');
                     const canvas = document.createElement('canvas');
@@ -3558,11 +3980,20 @@
             if (activeCallSession.state !== 'connected' || !frameDataUrl) return;
             const imgEl = document.getElementById('remoteVideoFallbackCanvas');
             const vidEl = document.getElementById('remoteCallVideo');
+            const minImgEl = document.getElementById('minRemoteVideoFallbackImg');
+            const minVidEl = document.getElementById('minRemoteCallVideo');
             if (imgEl) {
                 imgEl.src = frameDataUrl;
                 imgEl.classList.remove('hidden');
                 if (vidEl && (!vidEl.srcObject || vidEl.srcObject.getVideoTracks().length === 0)) {
                     vidEl.classList.add('hidden');
+                }
+            }
+            if (minImgEl) {
+                minImgEl.src = frameDataUrl;
+                minImgEl.classList.remove('hidden');
+                if (minVidEl && (!minVidEl.srcObject || minVidEl.srcObject.getVideoTracks().length === 0)) {
+                    minVidEl.classList.add('hidden');
                 }
             }
         }
@@ -3575,15 +4006,21 @@
             const isVideo = activeCallSession.callType === 'video';
             document.getElementById('videoCallStage').classList.toggle('hidden', !isVideo);
             document.getElementById('voiceAvatarStage').classList.toggle('hidden', isVideo);
-            document.getElementById('voiceCallStatusText').textContent = 'Connected • Live Audio';
+            document.getElementById('voiceCallStatusText').textContent = 'Connected • Clear Voice';
             document.getElementById('videoStageStatus').textContent = 'Connected • HD Live';
 
             const timerEl = document.getElementById('voiceCallTimerText');
             const minTimerEl = document.getElementById('minCallTimer');
+            const minVideoTimerEl = document.getElementById('minVideoCallTimer');
             const minNameEl = document.getElementById('minCallPeerName');
+            const minVidNameEl = document.getElementById('minVideoCallPeerName');
+
             timerEl.classList.remove('hidden');
             document.getElementById('voiceCallWaveform').classList.remove('hidden');
             if (minNameEl && peer) minNameEl.textContent = peer.name;
+            if (minVidNameEl && peer) minVidNameEl.textContent = peer.name;
+
+            syncVideoStreamsToElements();
 
             if (activeCallSession.timerInterval) clearInterval(activeCallSession.timerInterval);
             activeCallSession.timerInterval = setInterval(() => {
@@ -3593,25 +4030,28 @@
                 const formatted = `${mm}:${ss}`;
                 if (timerEl) timerEl.textContent = formatted;
                 if (minTimerEl) minTimerEl.textContent = formatted;
+                if (minVideoTimerEl) minVideoTimerEl.textContent = formatted;
             }, 1000);
         }
 
         function syncCallControlButtonsUI() {
             const muteBtn = document.getElementById('callMuteBtn');
             const muteIcon = document.getElementById('callMuteIcon');
+            const minVidMuteIcon = document.getElementById('minVideoMuteIcon');
             if (muteBtn) {
                 muteBtn.className = activeCallSession.muted
-                    ? 'w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center text-sm sm:text-base shadow'
-                    : 'w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm sm:text-base';
+                    ? 'w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-500 text-white flex items-center justify-center text-base sm:text-lg shadow'
+                    : 'w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-base sm:text-lg';
             }
             if (muteIcon) muteIcon.className = activeCallSession.muted ? 'fas fa-microphone-slash' : 'fas fa-microphone';
+            if (minVidMuteIcon) minVidMuteIcon.className = activeCallSession.muted ? 'fas fa-microphone-slash text-rose-400' : 'fas fa-microphone';
 
             const camBtn = document.getElementById('callCameraBtn');
             const camIcon = document.getElementById('callCameraIcon');
             if (camBtn) {
                 camBtn.className = activeCallSession.cameraEnabled
-                    ? 'w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-brand-600 text-white flex items-center justify-center text-sm sm:text-base shadow'
-                    : 'w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm sm:text-base';
+                    ? 'w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-brand-600 text-white flex items-center justify-center text-base sm:text-lg shadow'
+                    : 'w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-base sm:text-lg';
             }
             if (camIcon) camIcon.className = activeCallSession.cameraEnabled ? 'fas fa-video' : 'fas fa-video-slash';
         }
@@ -3636,7 +4076,6 @@
                 syncCallControlButtonsUI();
                 showToast(activeCallSession.cameraEnabled ? 'Camera turned ON' : 'Camera turned OFF', 'info');
             } else {
-                // Upgrade voice call to video call live
                 try {
                     const camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: activeCallSession.facingMode } });
                     const vTrack = camStream.getVideoTracks()[0];
@@ -3647,8 +4086,8 @@
                         document.getElementById('videoCallStage').classList.remove('hidden');
                         document.getElementById('voiceAvatarStage').classList.add('hidden');
                         document.getElementById('callFlipBtn').classList.remove('hidden');
-                        const localVid = document.getElementById('localCallVideo');
-                        if (localVid) { localVid.srcObject = activeCallSession.localStream; localVid.play().catch(() => {}); }
+                        document.getElementById('topBarFlipBtn').classList.remove('hidden');
+                        syncVideoStreamsToElements();
                         syncCallControlButtonsUI();
                         if (activeCallSession.peerId) initiateHybridCallStreams(activeCallSession.peerId);
                     }
@@ -3673,8 +4112,7 @@
                         oldTrack.stop();
                     }
                     activeCallSession.localStream.addTrack(newVideoTrack);
-                    const localVid = document.getElementById('localCallVideo');
-                    if (localVid) { localVid.srcObject = activeCallSession.localStream; localVid.play().catch(() => {}); }
+                    syncVideoStreamsToElements();
                     if (activeCallSession.mediaConn && activeCallSession.mediaConn.peerConnection) {
                         const sender = activeCallSession.mediaConn.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
                         if (sender) sender.replaceTrack(newVideoTrack);
@@ -3695,8 +4133,8 @@
             const btn = document.getElementById('callSpeakerBtn');
             if (btn) {
                 btn.className = activeCallSession.speakerBoost
-                    ? 'w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center text-sm sm:text-base shadow'
-                    : 'w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-sm sm:text-base';
+                    ? 'w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-emerald-500 text-white flex items-center justify-center text-base sm:text-lg shadow'
+                    : 'w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-base sm:text-lg';
             }
             showToast(activeCallSession.speakerBoost ? 'Speaker boost ON' : 'Normal volume', 'info');
         }
@@ -3704,13 +4142,22 @@
         function minimizeCallModal() {
             document.getElementById('voiceVideoCallModal').classList.remove('is-open');
             if (activeCallSession.state !== 'idle') {
-                document.getElementById('minimizedCallPill').classList.remove('hidden');
+                if (activeCallSession.callType === 'video') {
+                    document.getElementById('minimizedCallPill').classList.add('hidden');
+                    document.getElementById('minimizedVideoCallCard').classList.remove('hidden');
+                    syncVideoStreamsToElements();
+                } else {
+                    document.getElementById('minimizedVideoCallCard').classList.add('hidden');
+                    document.getElementById('minimizedCallPill').classList.remove('hidden');
+                }
             }
         }
 
         function maximizeCallModal() {
             document.getElementById('minimizedCallPill').classList.add('hidden');
+            document.getElementById('minimizedVideoCallCard').classList.add('hidden');
             document.getElementById('voiceVideoCallModal').classList.add('is-open');
+            syncVideoStreamsToElements();
         }
 
         function endActiveCall(notifyRemote = true) {
@@ -3743,6 +4190,7 @@
                 try { activeCallSession.localStream.getTracks().forEach(t => t.stop()); } catch (e) {}
                 activeCallSession.localStream = null;
             }
+            activeCallSession.remoteStream = null;
             if (activeCallSession.relayProcessor) {
                 try { activeCallSession.relayProcessor.disconnect(); } catch (e) {}
                 activeCallSession.relayProcessor = null;
@@ -3751,12 +4199,10 @@
                 try { activeCallSession.audioCtx.close(); } catch (e) {}
                 activeCallSession.audioCtx = null;
             }
-            const audioEl = document.getElementById('remoteVoiceAudio');
-            if (audioEl) audioEl.srcObject = null;
-            const remVid = document.getElementById('remoteCallVideo');
-            if (remVid) remVid.srcObject = null;
-            const locVid = document.getElementById('localCallVideo');
-            if (locVid) locVid.srcObject = null;
+            ['remoteVoiceAudio', 'remoteCallVideo', 'localCallVideo', 'minRemoteCallVideo', 'minLocalCallVideo'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.srcObject = null;
+            });
 
             activeCallSession.state = 'idle';
             activeCallSession.peerId = null;
@@ -3764,9 +4210,9 @@
 
             document.getElementById('voiceVideoCallModal').classList.remove('is-open');
             document.getElementById('minimizedCallPill').classList.add('hidden');
+            document.getElementById('minimizedVideoCallCard').classList.add('hidden');
         }
 
-        // 3. DUAL-BROKER MQTT OVER WSS ENGINE
         function initMqttDiscovery() {
             if (typeof mqtt === 'undefined') return;
             try {
@@ -3815,7 +4261,8 @@
                 label: myIdentity.label,
                 avatar: myIdentity.avatar,
                 pin: currentPin,
-                webrtcId: myIdentity.id
+                webrtcId: myIdentity.id,
+                lastSeen: Date.now()
             };
         }
 
@@ -3935,11 +4382,36 @@
                         }
                         return;
                     }
-                    await upsertPeer({ ...data.peer, online: true, transport: source });
+                    await upsertPeer({ ...data.peer, online: true, lastSeen: Date.now(), profileDeleted: false, transport: source });
                     sendPacketToPeer(data.peer.id, {
                         type: 'LAN_PRESENCE_ACK',
                         peer: getMyPeerSummary()
                     }, true);
+                } else if (data.type === 'PEER_OFFLINE_LASTSEEN' && data.fromId) {
+                    const existing = peers.find(x => x.id === data.fromId);
+                    if (existing) {
+                        existing.online = false;
+                        existing.lastSeen = data.lastSeen || Date.now();
+                        await idbPut('peers', existing);
+                        renderContacts();
+                        if (activeContactId === existing.id) updateActiveChatHeader(existing);
+                    }
+                } else if (data.type === 'PROFILE_DELETED_TOMBSTONE' && data.fromId) {
+                    const existing = peers.find(x => x.id === data.fromId);
+                    if (existing) {
+                        existing.online = false;
+                        existing.profileDeleted = true;
+                        existing.status = 'none';
+                        existing.lastSeen = Date.now();
+                        existing.label = 'Deleted Profile (Inactive)';
+                        await idbPut('peers', existing);
+                        renderContacts();
+                        if (activeContactId === existing.id) {
+                            updateActiveChatHeader(existing);
+                            evaluateHandshakeGate(existing);
+                        }
+                        showToast(`⚠️ ${existing.name} deleted their profile. You can now remove them from your chat list.`, 'info');
+                    }
                 } else if (data.type === 'PIN_LOOKUP_REQ' && data.pin === currentPin && data.from) {
                     const existing = peers.find(x => x.id === data.from.id);
                     if (existing && (existing.blockedByMe || existing.blockedMe)) return;
@@ -3971,6 +4443,8 @@
                     webrtcId: peerObj.webrtcId || peerObj.id,
                     status: 'none',
                     online: true,
+                    lastSeen: peerObj.lastSeen || Date.now(),
+                    profileDeleted: Boolean(peerObj.profileDeleted),
                     pinned: false,
                     unread: 0,
                     blockedByMe: false,
@@ -3984,6 +4458,8 @@
                 existing.avatar = peerObj.avatar || existing.avatar;
                 existing.pin = peerObj.pin || existing.pin;
                 existing.online = true;
+                existing.lastSeen = Date.now();
+                if (peerObj.profileDeleted === false) existing.profileDeleted = false;
                 existing.transport = peerObj.transport || existing.transport;
             }
 
@@ -4001,9 +4477,48 @@
             return existing;
         }
 
-        // =====================================================================
-        // J. CONNECTION REQUESTS, PERMISSION REVOCATION & MUTUAL BLOCKING
-        // =====================================================================
+        async function deletePeerUser(peerId) {
+            if (!peerId) return;
+            const p = peers.find(x => x.id === peerId);
+            if (!p) return;
+
+            const confirmed = await showCustomConfirm({
+                title: `Delete ${p.name} from Chat List?`,
+                message: p.profileDeleted
+                    ? `${p.name} already deleted their profile. Remove this useless profile and its chat history from your device?`
+                    : `Remove ${p.name} and their conversation history from your chat list?`,
+                confirmText: 'Delete User',
+                cancelText: 'Cancel',
+                type: 'danger'
+            });
+            if (!confirmed) return;
+
+            peers = peers.filter(x => x.id !== peerId);
+            delete messagesByPeer[peerId];
+            await idbDelete('peers', peerId);
+            await idbDelete('messages', peerId);
+
+            if (activeWebRtcConns[peerId]) {
+                try { activeWebRtcConns[peerId].close(); } catch (e) {}
+                delete activeWebRtcConns[peerId];
+            }
+
+            if (activeContactId === peerId) {
+                activeContactId = null;
+                closeMobileChatPane();
+                const ov = document.getElementById('noActiveChatOverlay');
+                if (ov) { ov.classList.remove('hidden'); ov.classList.add('md:flex'); }
+            }
+            if (activeFilePeerId === peerId) {
+                selectQuickPeerForTransfer('');
+            }
+
+            renderContacts();
+            populateQuickPeerSelect();
+            updateUnreadBadges();
+            showToast(`🗑️ Deleted ${p.name} from your chat list`, 'info');
+        }
+
         async function requestConnectionWithPeer(peerId, viaMethod = 'Lobby') {
             const p = peers.find(x => x.id === peerId);
             if (!p || p.blockedByMe || p.blockedMe) return;
@@ -4292,10 +4807,7 @@
                 filterBadge.classList.toggle('hidden', pendingCount === 0);
             }
         }
-
-        // =====================================================================
-        // K. INCOMING P2P, BINARY FILE, DRIVE FAILOVER & CALL PACKET ROUTER
-        // =====================================================================
+		
         function normalizeToUint8Array(chunkData) {
             if (!chunkData) return new Uint8Array(0);
             if (chunkData instanceof Uint8Array) return chunkData;
@@ -4513,7 +5025,6 @@
                 processedPacketIds.add('inner_' + packet.packetId);
             }
 
-            // 1. VOICE & HD VIDEO CALL SIGNALING
             if (packet.type === 'MEDIA_CALL_INVITE' && packet.fromPeer) {
                 const p = await upsertPeer({ ...packet.fromPeer, online: true });
                 if (!p || p.blockedByMe || p.blockedMe) return;
@@ -4525,10 +5036,10 @@
                 activeCallSession.callId = packet.callId;
                 activeCallSession.callType = packet.callType || 'voice';
                 activeCallSession.state = 'ringing';
-                const label = activeCallSession.callType === 'video' ? 'Incoming HD Video Call...' : 'Incoming Voice Call...';
+                const label = activeCallSession.callType === 'video' ? 'Incoming WhatsApp HD Video Call...' : 'Incoming WhatsApp Voice Call...';
                 openCallModalUI(p, label, true);
                 startCallRingtoneLoop();
-                sendBrowserOsNotification(`📞 ${label} from ${p.name}`, 'Open P2P Share to Answer or Decline.');
+                sendBrowserOsNotification(`📞 ${label} from ${p.name}`, 'Open P2P Share or tap notification to answer.');
                 return;
             }
             if (packet.type === 'MEDIA_CALL_ACCEPT') {
@@ -4555,7 +5066,6 @@
                 return;
             }
 
-            // 2. WHATSAPP-STYLE DELETE FOR EVERYONE
             if (packet.type === 'DELETE_MSG_EVERYONE' && packet.fromId && packet.msgId) {
                 const list = messagesByPeer[packet.fromId] || [];
                 const targetMsg = list.find(m => String(m.id) === String(packet.msgId));
@@ -4584,7 +5094,6 @@
                 return;
             }
 
-            // 3. BACKEND 2ND-ATTEMPT GOOGLE DRIVE FAILOVER READY & AUTO-DELETE
             if (packet.type === 'CLOUD_FILE_READY' && packet.fromPeer) {
                 const p = await upsertPeer({ ...packet.fromPeer, online: true });
                 const senderId = packet.fromPeer.id;
@@ -4688,7 +5197,7 @@
                     verifiedRtcPeers.add(packet.peer.id);
                     inspectWebRtcRouteType(conn);
                 }
-                await upsertPeer({ ...packet.peer, online: true, transport: conn ? 'WebRTC' : 'Pusher' });
+                await upsertPeer({ ...packet.peer, online: true, lastSeen: Date.now(), transport: conn ? 'WebRTC' : 'Pusher' });
             }
             else if (packet.type === 'CONNECTION_REQUEST') {
                 const p = await upsertPeer({ ...packet.fromPeer, online: true });
@@ -4955,7 +5464,8 @@
                 }
             }
         }
-		async function assembleAndFinalizeBuffer(transferId) {
+
+        async function assembleAndFinalizeBuffer(transferId) {
             const buf = incomingFileBuffers[transferId];
             if (!buf || buf.finalizing) return;
             buf.finalizing = true;
@@ -4978,7 +5488,6 @@
                     tr.errorReason = 'Network interrupted before all chunks arrived';
                     await idbPut('files', tr);
                     await upsertChatFileMessage(tr.peerId, tr, true);
-                    // Automatically request sender to run 2nd attempt via backend Drive
                     sendPacketToPeer(tr.peerId, {
                         type: 'FILE_RETRY_REQUEST',
                         transferId,
@@ -5086,9 +5595,6 @@
             triggerSafeBrowserDownload(targetUrl, tr.name);
         }
 
-        // =====================================================================
-        // L. COMPLETE CHAT MESSAGING ENGINE (IMAGE/VIDEO THUMBNAILS & DELETE)
-        // =====================================================================
         function renderMessages() {
             const container = document.getElementById('messagesContainer');
             if (!container || !activeContactId) return;
@@ -5120,7 +5626,6 @@
                 wrap.setAttribute('data-chat-msg-wrap', msg.id);
                 wrap.className = `flex flex-col ${isMe ? 'items-end' : 'items-start'} animate-pop`;
 
-                // WhatsApp-Style Deleted Message Notice
                 if (msg.deletedForEveryone) {
                     wrap.innerHTML = `
                         <div class="group relative max-w-[82%] sm:max-w-[68%] rounded-2xl px-3.5 py-2 shadow-2xs border ${
@@ -5171,13 +5676,12 @@
                         ? `<span data-expires-at="${expiresAt}" class="text-[9px] font-extrabold ${expired ? 'text-rose-400' : 'text-amber-300'} block mt-0.5">${formatRemainingTime(expiresAt)}</span>`
                         : '';
 
-                    // Inline Thumbnail Preview for Image & Video in Chat
                     let mediaPreviewHtml = '';
                     if (!expired) {
                         if (fileMeta.category === 'video' && (thumbUrl || activeMediaUrl)) {
                             const previewTarget = activeMediaUrl || thumbUrl;
                             mediaPreviewHtml = `
-                                <div onclick="openMediaPreviewModal('${previewTarget}', '${escapeHtml(msg.fileName || 'Video')}', 'video')" class="media-thumb-card w-full h-36 rounded-xl bg-slate-950 cursor-pointer flex items-center justify-center relative overflow-hidden border border-white/15 shadow-sm">
+                                <div onclick="openInbuiltFileViewerByTransferId('${liveTr ? liveTr.id : ''}', '${activeMediaUrl}', '${escapeHtml(msg.fileName || 'Video')}', 'video')" class="media-thumb-card w-full h-36 rounded-xl bg-slate-950 cursor-pointer flex items-center justify-center relative overflow-hidden border border-white/15 shadow-sm">
                                     ${thumbUrl
                                         ? `<img src="${thumbUrl}" class="w-full h-full object-cover opacity-90" alt="Video Thumbnail">`
                                         : `<video src="${activeMediaUrl}#t=0.5" preload="metadata" muted playsinline class="w-full h-full object-cover opacity-90"></video>`
@@ -5186,18 +5690,54 @@
                                         <div class="w-11 h-11 rounded-full bg-white/25 backdrop-blur-md flex items-center justify-center text-lg shadow-lg border border-white/40">
                                             <i class="fas fa-play ml-0.5"></i>
                                         </div>
-                                        <span class="text-[9px] font-extrabold uppercase tracking-wider mt-1.5 px-2 py-0.5 rounded-full bg-black/50">Play Video</span>
+                                        <span class="text-[9px] font-extrabold uppercase tracking-wider mt-1.5 px-2 py-0.5 rounded-full bg-black/50">Play Inbuilt Video</span>
                                     </div>
                                 </div>
                             `;
                         } else if (fileMeta.category === 'image' && (thumbUrl || activeMediaUrl)) {
                             const fullImg = activeMediaUrl || thumbUrl;
                             mediaPreviewHtml = `
-                                <div onclick="openMediaPreviewModal('${fullImg}', '${escapeHtml(msg.fileName || 'Image')}', 'image')" class="media-thumb-card w-full h-36 rounded-xl bg-slate-900/40 cursor-pointer flex items-center justify-center relative overflow-hidden border border-white/15 shadow-sm">
+                                <div onclick="openInbuiltFileViewerByTransferId('${liveTr ? liveTr.id : ''}', '${fullImg}', '${escapeHtml(msg.fileName || 'Image')}', 'image')" class="media-thumb-card w-full h-36 rounded-xl bg-slate-900/40 cursor-pointer flex items-center justify-center relative overflow-hidden border border-white/15 shadow-sm">
                                     <img src="${thumbUrl || activeMediaUrl}" class="w-full h-full object-cover" alt="Image Thumbnail">
                                     <span class="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-md bg-black/60 text-white text-[9px] font-extrabold backdrop-blur-xs">
-                                        <i class="fas fa-expand mr-1"></i>View
+                                        <i class="fas fa-expand mr-1"></i>View Photo
                                     </span>
+                                </div>
+                            `;
+                        } else if (fileMeta.category === 'audio' && activeMediaUrl) {
+                            mediaPreviewHtml = `
+                                <div onclick="openInbuiltFileViewerByTransferId('${liveTr ? liveTr.id : ''}', '${activeMediaUrl}', '${escapeHtml(msg.fileName || 'Audio')}', 'audio')" class="p-3 rounded-xl bg-slate-800/90 text-white cursor-pointer flex items-center gap-3 border border-white/10">
+                                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-base">
+                                        <i class="fas fa-music"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1 text-left">
+                                        <p class="text-xs font-bold truncate">${escapeHtml(msg.fileName || 'Audio Track')}</p>
+                                        <p class="text-[10px] text-emerald-300 font-bold">Tap to Open Inbuilt Hi-Fi Audio Player</p>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (fileMeta.category === 'pdf' && activeMediaUrl) {
+                            mediaPreviewHtml = `
+                                <div onclick="openInbuiltFileViewerByTransferId('${liveTr ? liveTr.id : ''}', '${activeMediaUrl}', '${escapeHtml(msg.fileName || 'Document.pdf')}', 'pdf')" class="p-3 rounded-xl bg-slate-800/90 text-white cursor-pointer flex items-center gap-3 border border-white/10">
+                                    <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-base">
+                                        <i class="fas fa-file-pdf"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1 text-left">
+                                        <p class="text-xs font-bold truncate">${escapeHtml(msg.fileName || 'Document.pdf')}</p>
+                                        <p class="text-[10px] text-rose-300 font-bold">Tap to Open Inbuilt PDF Viewer</p>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (fileMeta.category === 'archive' && activeMediaUrl) {
+                            mediaPreviewHtml = `
+                                <div onclick="openInbuiltFileViewerByTransferId('${liveTr ? liveTr.id : ''}', '${activeMediaUrl}', '${escapeHtml(msg.fileName || 'Archive.zip')}', 'archive')" class="p-3 rounded-xl bg-slate-800/90 text-white cursor-pointer flex items-center gap-3 border border-white/10">
+                                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-base">
+                                        <i class="fas fa-file-zipper"></i>
+                                    </div>
+                                    <div class="min-w-0 flex-1 text-left">
+                                        <p class="text-xs font-bold truncate">${escapeHtml(msg.fileName || 'Archive.zip')}</p>
+                                        <p class="text-[10px] text-amber-300 font-bold">Tap to Explore ZIP Archive Inbuilt</p>
+                                    </div>
                                 </div>
                             `;
                         }
@@ -5487,9 +6027,6 @@
             showToast('Chat history cleared', 'info');
         }
 
-        // =====================================================================
-        // M. 4-MODULE ROUTER (CHATS / FILES / BLOCKED / ABOUT) & CONTACTS UI
-        // =====================================================================
         function switchModule(mod) {
             const chatSec    = document.getElementById('moduleChat');
             const fileSec    = document.getElementById('moduleFiles');
@@ -5602,6 +6139,7 @@
             }
 
             filtered.sort((a, b) =>
+                (b.profileDeleted ? 1 : 0) - (a.profileDeleted ? 1 : 0) ||
                 (b.status === 'pending_recv' ? 1 : 0) - (a.status === 'pending_recv' ? 1 : 0) ||
                 (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
                 (b.online ? 1 : 0) - (a.online ? 1 : 0)
@@ -5611,12 +6149,25 @@
                 const isSelected = c.id === activeContactId;
                 const msgs = messagesByPeer[c.id] || [];
                 const routeTag = detectPeerRouteMode(c.id) === 'LAN' ? '⚡ LAN' : '🌐 WAN';
-                const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1].text : `${routeTag} • ${c.label} • PIN: ${c.pin}`;
+                const lastSeenText = formatLastSeen(c.lastSeen, c.online, c.profileDeleted);
+                const lastMsg = c.profileDeleted
+                    ? '⚠️ Profile Deleted & Inactive (Tap Delete User)'
+                    : (msgs.length > 0 ? msgs[msgs.length - 1].text : `${lastSeenText} • PIN: ${c.pin}`);
 
                 let statusBadge = '';
                 let actionButtonsHtml = '';
 
-                if (c.status === 'pending_recv') {
+                if (c.profileDeleted) {
+                    statusBadge = '<span class="px-2.5 py-0.5 bg-rose-500/20 text-rose-500 rounded-md text-[9px] font-extrabold">Useless Profile</span>';
+                    actionButtonsHtml = `
+                        <div class="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2" onclick="event.stopPropagation()">
+                            <span class="text-[10px] text-slate-400">User cleared & deleted profile</span>
+                            <button type="button" onclick="deletePeerUser('${c.id}')" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[10px] font-extrabold shadow flex items-center gap-1">
+                                <i class="fas fa-user-xmark"></i> Delete User
+                            </button>
+                        </div>
+                    `;
+                } else if (c.status === 'pending_recv') {
                     statusBadge = '<span class="px-2 py-0.5 bg-rose-500 text-white rounded-md text-[9px] font-extrabold animate-pulse">Incoming Req</span>';
                     actionButtonsHtml = `
                         <div class="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between gap-2" onclick="event.stopPropagation()">
@@ -5646,16 +6197,18 @@
 
                 const item = document.createElement('div');
                 item.className = `peer-card-item p-3 rounded-2xl cursor-pointer transition-all border ${
-                    isSelected
-                        ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white border-transparent shadow-md shadow-brand-500/20'
-                        : 'bg-white dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/70 border-slate-200/70 dark:border-slate-800'
+                    c.profileDeleted
+                        ? 'bg-rose-500/5 dark:bg-rose-950/20 border-rose-500/30 opacity-80'
+                        : (isSelected
+                            ? 'bg-gradient-to-r from-brand-600 to-indigo-600 text-white border-transparent shadow-md shadow-brand-500/20'
+                            : 'bg-white dark:bg-slate-900 hover:bg-slate-100/80 dark:hover:bg-slate-800/70 border-slate-200/70 dark:border-slate-800')
                 }`;
                 item.onclick = () => selectContact(c.id);
 
                 item.innerHTML = `
                     <div class="flex items-center gap-3">
                         <div class="relative shrink-0">
-                            <img src="${c.avatar}" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 bg-slate-100">
+                            <img src="${c.avatar}" class="w-11 h-11 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 bg-slate-100 ${c.profileDeleted ? 'grayscale' : ''}">
                             <span class="${c.online ? 'status-dot-overlay bg-emerald-500' : 'bg-slate-400'} w-3.5 h-3.5 rounded-full border-2 ${isSelected ? 'border-brand-600' : 'border-white dark:border-slate-900'} absolute -bottom-1 -right-1"></span>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -5828,7 +6381,8 @@
             document.getElementById('activeChatBadge').className = `px-2 py-0.5 text-[9px] font-extrabold rounded-md shrink-0 ${
                 c.status === 'connected' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-600'
             }`;
-            document.getElementById('activeChatStatus').textContent = `${c.online ? 'Online' : 'Offline'} • ${c.label} • PIN: ${c.pin}`;
+            const lastSeenStr = formatLastSeen(c.lastSeen, c.online, c.profileDeleted);
+            document.getElementById('activeChatStatus').textContent = `${lastSeenStr} • ${c.label} • PIN: ${c.pin}`;
             document.getElementById('activeChatOnlineDot').className = `${c.online ? 'status-dot-overlay bg-emerald-500' : 'bg-slate-400'} w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 absolute -bottom-1 -right-1`;
         }
 
@@ -5845,9 +6399,6 @@
             }
         }
 
-        // =====================================================================
-        // N. TURBO 512KB BINARY LAN STREAMER & AUTO 2ND-ATTEMPT DRIVE FAILOVER
-        // =====================================================================
         function generateNewPin(userTriggered = false) {
             if (!userTriggered && myIdentity && myIdentity.pin) {
                 currentPin = myIdentity.pin;
@@ -6040,7 +6591,6 @@
             return activeWebRtcConns[peerId] && activeWebRtcConns[peerId].open ? activeWebRtcConns[peerId] : null;
         }
 
-        // 8MB High-Throughput Sliding Backpressure Window for Ultra-Fast LAN Binary Transfers
         async function waitForDataChannelDrain(rtcConn, maxBuffered = 8 * 1024 * 1024) {
             if (!rtcConn || !rtcConn.dataChannel) return;
             const dc = rtcConn.dataChannel;
@@ -6062,7 +6612,6 @@
             });
         }
 
-        // ATTEMPT 1: 512KB RAW BINARY LAN/P2P STREAM -> ATTEMPT 2: AUTOMATIC BACKEND GOOGLE DRIVE FAILOVER
         async function streamFileToPeer(file, targetPeerId, inChat = false, reuseTransferId = null, isSecondAttemptDriveFailover = false) {
             const peer = peers.find(p => p.id === targetPeerId && !p.blockedByMe && !p.blockedMe);
             if (!peer) return showToast('Target peer not found or blocked', 'error');
@@ -6103,7 +6652,6 @@
             const routeMode = (isSameBrowserLan || useWebRtcDirect) ? 'LAN' : detectPeerRouteMode(targetPeerId);
             const startNetworkSig = getNetworkSignature();
 
-            // 512KB Binary Chunks on LAN / WebRTC DataChannel for maximum speed
             const chunkSize = (isSameBrowserLan || useWebRtcDirect) ? (512 * 1024) : (64 * 1024);
             const totalChunks = Math.max(1, Math.ceil(file.size / chunkSize));
             const speedBadge = routeMode === 'LAN' ? '⚡ 512KB LAN Turbo' : '🌐 Direct Stream';
@@ -6138,7 +6686,6 @@
             await upsertChatFileMessage(targetPeerId, trRecord, true);
             renderTransfers();
 
-            // Automatic 2nd-Attempt Backend Google Drive Failover Helper (Invisible to Frontend UI)
             const executeSecondAttemptBackendDriveFailover = async () => {
                 trRecord.failed = false;
                 trRecord.status = 'Attempt 2: Sending via Auto-Failover...';
@@ -6201,7 +6748,6 @@
             }
 
             try {
-                // Attempt 1: High-Speed Direct P2P Stream
                 const startAckPromise = waitForAckSignal(`start_${transferId}`, (isSameBrowserLan || useWebRtcDirect) ? 450 : 1100);
                 sendPacketToPeer(targetPeerId, {
                     type: 'FILE_START',
@@ -6220,7 +6766,6 @@
                 }, true);
 
                 const startAckReceived = await startAckPromise;
-                // If peer cannot be reached over direct WebRTC and file > 384KB, trigger 2nd-attempt backend failover automatically
                 if (!isSameBrowserLan && !useWebRtcDirect && (!startAckReceived || file.size > 384 * 1024)) {
                     throw new Error('Direct P2P channel blocked — switching to 2nd attempt');
                 }
@@ -6324,7 +6869,6 @@
                     reason: 'Attempt 1 interrupted — starting automatic 2nd attempt'
                 }, true);
 
-                // AUTOMATIC 2ND ATTEMPT USING BACKEND GOOGLE DRIVE STORAGE
                 if (navigator.onLine) {
                     showToast(`🔄 P2P Attempt 1 interrupted — automatically sending on 2nd attempt...`, 'info');
                     try {
@@ -6409,7 +6953,6 @@
             }
         }
 
-        // ZERO-BLINK IN-PLACE DOM UPDATER FOR FILES SECTION (WITH PREVIEWS & ALL FILE ICONS)
         function renderTransfers() {
             const container = document.getElementById('transferQueueContainer');
             if (!container) return;
@@ -6453,7 +6996,7 @@
                 } ${(!isDone && !isFailed) ? 'transfer-streaming-glow' : ''} border flex flex-col sm:flex-row sm:items-center justify-between gap-3.5`;
 
                 const previewBoxHtml = (!isExpired && t.thumbDataUrl)
-                    ? `<img src="${t.thumbDataUrl}" onclick="openMediaPreviewModal('${t.blobUrl || t.cloudUrl || t.thumbDataUrl}', '${escapeHtml(t.name)}', '${fileMeta.category}')" class="w-11 h-11 rounded-2xl object-cover border border-brand-500/30 cursor-pointer shrink-0" title="Tap to Preview">`
+                    ? `<img src="${t.thumbDataUrl}" onclick="openInbuiltFileViewerByTransferId('${t.id}', '', '${escapeHtml(t.name)}', '')" class="w-11 h-11 rounded-2xl object-cover border border-brand-500/30 cursor-pointer shrink-0" title="Tap to Open Inbuilt Viewer">`
                     : `<div class="w-10 h-10 md:w-11 md:h-11 rounded-2xl ${isFailed ? 'bg-rose-500/15 text-rose-500' : `${fileMeta.bg} ${fileMeta.color}`} flex items-center justify-center text-base shrink-0"><i class="fas ${isFailed ? 'fa-triangle-exclamation' : fileMeta.icon}"></i></div>`;
 
                 row.innerHTML = `
@@ -6479,18 +7022,23 @@
                             </div>
                         </div>
                     </div>
-                    <div class="shrink-0 flex items-center">
+                    <div class="shrink-0 flex items-center gap-2">
+                        ${isDone && !isExpired ? `
+                            <button type="button" onclick="triggerNavAnim(this); openInbuiltFileViewerByTransferId('${t.id}', '', '${escapeHtml(t.name)}', '')" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold flex items-center gap-1.5 shadow shrink-0">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                        ` : ''}
                         ${isFailed ? `
                             <button type="button" onclick="triggerNavAnim(this); retryFileTransfer('${t.id}')" class="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow shrink-0">
-                                <i class="fas fa-rotate-right"></i> Retry Transfer
+                                <i class="fas fa-rotate-right"></i> Retry
                             </button>
                         ` : (isDone ? (isExpired ? `
                             <button type="button" disabled class="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-not-allowed shrink-0" title="Download Expired">
                                 <i class="fas fa-clock"></i> Expired
                             </button>
                         ` : `
-                            <button type="button" onclick="triggerNavAnim(this); downloadTransferById('${t.id}')" class="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow shrink-0" title="Save File to Device">
-                                <i class="fas fa-download"></i> Download
+                            <button type="button" onclick="triggerNavAnim(this); downloadTransferById('${t.id}')" class="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 shadow shrink-0" title="Save File">
+                                <i class="fas fa-download"></i> Save
                             </button>
                         `) : '')}
                     </div>
@@ -6519,9 +7067,6 @@
             showToast('Cleared transfer history on this device', 'info');
         }
 
-        // =====================================================================
-        // O. "MY LINK" HUB & ENLARGED AUTOFOCUS QR SCANNER ENGINE
-        // =====================================================================
         function buildMyEncodedToken() {
             if (!myIdentity) return '';
             const compactPayload = JSON.stringify({
@@ -6623,7 +7168,7 @@
         async function refocusScannerCamera() {
             const track = getActiveScannerVideoTrack();
             if (!track || typeof track.applyConstraints !== 'function') {
-                return showToast('Tap camera view or hold device 15–25cm from QR code', 'info');
+                return showToast('Hold device 15–25cm from QR code', 'info');
             }
             try {
                 await track.applyConstraints({
@@ -6631,7 +7176,7 @@
                 });
                 showToast('Camera lens refocused!', 'success');
             } catch (e) {
-                showToast('Auto-focus active — hold steady 20cm away', 'info');
+                showToast('Auto-focus active', 'info');
             }
         }
 
@@ -6653,7 +7198,7 @@
                 }
             } catch (e) {
                 scannerTorchOn = false;
-                showToast('Torch not available on this device lens', 'info');
+                showToast('Torch not available on this lens', 'info');
             }
         }
 
@@ -6788,6 +7333,7 @@
                     pin: data.pin,
                     webrtcId: data.webrtcId || data.id,
                     online: true,
+                    lastSeen: Date.now(),
                     transport: 'Invite Link'
                 });
 
@@ -6805,9 +7351,6 @@
             }
         }
 
-        // =====================================================================
-        // P. PUSHER NOTIFICATION CENTER, INTERACTIVE TOASTS & WEB AUDIO CHIMES
-        // =====================================================================
         function playNotificationChime(type = 'info') {
             if (!soundEnabled) return;
             try {
@@ -6862,8 +7405,22 @@
         }
 
         function sendBrowserOsNotification(title, body) {
-            if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
-                try { new Notification(title, { body }); } catch (e) {}
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.ready.then(reg => {
+                            reg.showNotification(title, {
+                                body,
+                                icon: './favicon.ico',
+                                badge: './favicon.ico',
+                                vibrate: [200, 100, 200],
+                                tag: 'p2p-share-notification'
+                            });
+                        });
+                    } else {
+                        new Notification(title, { body });
+                    }
+                } catch (e) {}
             }
         }
 
@@ -6985,9 +7542,6 @@
             setTimeout(() => { toast.remove(); }, 3800);
         }
 
-        // =====================================================================
-        // Q. PROFILE, DUAL DRAG-AND-DROP (CHAT + FILES), RESET & UTILITIES
-        // =====================================================================
         function openProfileModal() {
             if (!myIdentity) return;
             syncPwaInstallButtonsVisibility();
@@ -7022,13 +7576,29 @@
 
         async function resetAllDeviceData() {
             const confirmed = await showCustomConfirm({
-                title: 'Reset & Logout Device?',
-                message: 'This will permanently erase your device identity, connected peers, chat history, and saved files from this browser.',
-                confirmText: 'Yes, Reset Everything',
+                title: 'Delete Profile & Reset Device?',
+                message: 'This will broadcast a profile deletion tombstone to connected peers so they can delete your inactive profile, and erase all local data from this browser.',
+                confirmText: 'Yes, Delete & Reset',
                 cancelText: 'Cancel',
                 type: 'danger'
             });
             if (!confirmed) return;
+
+            if (myIdentity && myIdentity.id) {
+                const tombstoneEnv = {
+                    packetId: 'tomb_' + Date.now(),
+                    envelopeType: 'BROADCAST',
+                    fromId: myIdentity.id,
+                    payload: {
+                        type: 'PROFILE_DELETED_TOMBSTONE',
+                        fromId: myIdentity.id
+                    }
+                };
+                lanBus.postMessage(tombstoneEnv);
+                triggerPusherEvent(tombstoneEnv);
+                if (mqttClient && mqttClient.connected) mqttClient.publish('ata/direct/hub/v5/lobby', JSON.stringify(tombstoneEnv));
+                if (mqttBackupClient && mqttBackupClient.connected) mqttBackupClient.publish('ata/direct/hub/v5/lobby', JSON.stringify(tombstoneEnv));
+            }
 
             await idbClearAll();
             localStorage.removeItem('ata_registered_v5');
@@ -7096,7 +7666,6 @@
         }
 
         function setupDragAndDrop() {
-            // 1. Dedicated Files Tab Drop Zone
             const dropZone = document.getElementById('dedicatedDropZone');
             if (dropZone) {
                 ['dragenter', 'dragover'].forEach(ev => {
@@ -7118,7 +7687,6 @@
                 });
             }
 
-            // 2. Active Chat Conversation Window Drag & Drop
             const chatPane = document.getElementById('chatConversationPane');
             const chatOverlay = document.getElementById('chatDropOverlay');
             const chatDropPeerText = document.getElementById('chatDropTargetPeerText');
