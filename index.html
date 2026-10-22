@@ -471,28 +471,43 @@
         }
 
         @media (max-width: 767px) {
-            body {
-                background-color: #0f172a;
-            }
-            #chatConversationPane.mobile-chat-open {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                bottom: 0 !important;
-                z-index: 160 !important;
-                height: 100dvh !important;
-                border-radius: 0 !important;
-            }
-            #mobileBottomNav {
-                height: calc(62px + env(safe-area-inset-bottom, 0px));
-                border-top-left-radius: 1.25rem;
-                border-top-right-radius: 1.25rem;
-            }
-            .peer-card-item {
-                border-radius: 1.15rem;
-            }
-        }
+			body {
+				background-color: #0f172a;
+			}
+			#chatConversationPane.mobile-chat-open {
+				position: fixed !important;
+				top: 0 !important;
+				left: 0 !important;
+				right: 0 !important;
+				bottom: 60px !important;
+				z-index: 160 !important;
+				height: calc(100dvh - 60px) !important;
+				border-radius: 0 !important;
+				display: flex !important;
+				flex-direction: column !important;
+				overflow: hidden !important;
+			}
+			#chatConversationPane.mobile-chat-open #messagesContainer {
+				flex: 1 1 auto !important;
+				overflow-y: auto !important;
+				padding-bottom: 24px !important;
+			}
+			#chatConversationPane.mobile-chat-open .p-2\.5.md\:p-4.bg-white {
+				flex-shrink: 0 !important;
+				position: relative !important;
+				z-index: 30 !important;
+				background-color: inherit !important;
+				margin-bottom: 0 !important;
+			}
+			#mobileBottomNav {
+				height: calc(62px + env(safe-area-inset-bottom, 0px));
+				border-top-left-radius: 1.25rem;
+				border-top-right-radius: 1.25rem;
+			}
+			.peer-card-item {
+				border-radius: 1.15rem;
+			}
+		}
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col md:flex-row select-none transition-colors duration-200">
@@ -854,8 +869,8 @@
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 <h3 id="activeChatName" class="font-extrabold text-sm md:text-base text-slate-900 dark:text-white truncate max-w-[120px] sm:max-w-[210px]">Peer</h3>
-                                <span id="activeChatBadge" class="px-2 py-0.5 text-[9px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md shrink-0">Connected</span>
-                                <span id="activeChatNetModeBadge" class="px-2 py-0.5 text-[9px] font-extrabold bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-md shrink-0">Auto P2P</span>
+                                <span id="activeChatBadge" class="px-2 py-0.5 text-[9px] font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md shrink-0" style="Display:none;">Connected</span>
+                                <span id="activeChatNetModeBadge" class="px-2 py-0.5 text-[9px] font-extrabold bg-brand-500/10 text-brand-600 dark:text-brand-400 rounded-md shrink-0" style="Display:none;" >Auto P2P</span>
                             </div>
                             <p id="activeChatStatus" class="text-[11px] text-slate-500 dark:text-slate-400 truncate">Direct P2P Channel</p>
                         </div>
@@ -924,7 +939,7 @@
                     </button>
                 </div>
 
-                <div class="p-2.5 md:p-4 pb-safe bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 relative">
+                <div class="p-2.5 md:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 relative mb-[62px] md:mb-0">
                     <div id="composerLockOverlay" class="hidden absolute inset-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs z-20 flex items-center justify-center px-4">
                         <div id="composerLockContent" class="flex flex-wrap items-center justify-center gap-3 text-xs font-bold text-slate-600 dark:text-slate-300"></div>
                     </div>
